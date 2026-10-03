@@ -1,13 +1,13 @@
 {
-  "file": "fixtures/snapshot-453074175.json.gz",
-  "sha256": "b7731bde152fb9d971cf1094dda9f4f5e0890a379efc96def46fcd6502f1aa56",
+  "file": "fixtures/snapshot-453074621.json.gz",
+  "sha256": "a44401839a76065c135a7f225894182a073208c6fb8d33e705d5d418cfd6856b",
   "captureStartSlot": 453070248,
-  "endSlot": 453074175,
-  "takenAt": "2026-10-03T22:56:56.622Z",
+  "endSlot": 453074621,
+  "takenAt": "2026-10-03T22:58:40.300Z",
   "counts": {
-    "configs": 35,
-    "pools": 66,
-    "windows": 66,
-    "buys": 305
+    "configs": 37,
+    "pools": 73,
+    "windows": 73,
+    "buys": 338
   }
 }
