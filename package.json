@@ -5,12 +5,15 @@
   "packageManager": "pnpm@10.34.5",
   "scripts": {
     "test": "pnpm -r --if-present test",
-    "typecheck": "pnpm -r --if-present typecheck",
+    "typecheck": "tsc -p tsconfig.json && pnpm -r --if-present typecheck",
     "proof": "tsx scripts/snapshot.ts && tsx scripts/recompute.ts && tsx scripts/verify_sample.ts",
     "worker": "pnpm --filter @curvebook/worker start",
-    "web": "pnpm --filter @curvebook/web dev"
+    "web": "pnpm --filter @curvebook/web dev",
+    "test:program": "cd program && pnpm test",
+    "rehearse": "tsx scripts/rehearse-localnet.ts"
   },
   "devDependencies": {
+    "@types/bn.js": "^5.2.0",
     "@types/node": "^22.0.0",
     "tsx": "^4.19.0",
     "typescript": "^5.6.0"
