@@ -1,0 +1,126 @@
+{
+  "network": "localnet (real DBC program dumped from mainnet)",
+  "at": "2026-10-03T22:45:01.457Z",
+  "presets": [
+    {
+      "slug": "slow-cliff",
+      "name": "Slow Cliff",
+      "builder": "buildCurveWithLiquidityWeights",
+      "summary": "Deeper liquidity at low prices; 50% fee in slot 0 decaying exponentially to 1% over 20 slots; the creator's bundled buy pays the minimum fee.",
+      "config": "814feCEvA24FRHr3EJNnZMHzfGta3CDnd4RbgQxFRMg9",
+      "vault": "GobW6kv4GWNhi6R79aqFDYZ3XVeu4yw8GX3jeyiXM2nZ",
+      "sigs": [
+        "DRFB2ZHqXsS5XK5zCWjDA8hjXN1yvb4YWyH6KWv8FBJXA5GJnpuo5hXQbKXv9gLp7KicmDeLsCH46dFH5NwsS6D",
+        "3g7A8VN1drgfw57RG8CjDMosbChwPJe5j32K98ew6xWFjVb71CDtLKKvcs8PMjjRDAqBPJv6YcDMmmLxzBn6B6Fh"
+      ]
+    },
+    {
+      "slug": "two-step",
+      "name": "Two-Step",
+      "builder": "buildCurveWithTwoSegments",
+      "summary": "Two curve segments; 50% fee in slot 0 falling linearly to 1% over 20 slots; the creator's bundled buy pays the minimum fee.",
+      "config": "77VnhYC3x7e2Jj6ZEaNAQmRv1nsZc4h8DohSbE6NXPR3",
+      "vault": "7SgcMNz7VDnQgfKgK1aNuP7rE3HVMW9Zfou882eRP4nQ",
+      "sigs": [
+        "58fCW25FmVqzmrPRShb83YfXVcp7TGx8DWyQAzkAydsLKqU8afZrFUVR5GdRD3uZ2x27RuGPVE6GQeGYU4dEVBy5"
+      ]
+    },
+    {
+      "slug": "control",
+      "name": "Control",
+      "builder": "buildCurve",
+      "summary": "The default launchpad shape: a flat 1% fee from the first slot, no schedule.",
+      "config": "CxaVdd4g269vkgPMgnEwxRNeaG9TAJjyaPMgfSqRwsit",
+      "vault": "FmRhEy2qbZYuqXGM8ZpxSPWwEQzReZCQCDqavhFP6ttt",
+      "sigs": [
+        "5m4Aer3kXgZyrGqBngU3eeQ5FsRjMD6osjWqHCLyaZbNfiPn28f668k95sNb2RBVbvr8jyr3oMUTi3USxKzFnLpv"
+      ]
+    }
+  ],
+  "results": [
+    {
+      "preset": "Slow Cliff",
+      "pool": "J79YinZx21oF9P5uP8cwYkNHdRE1U8T6w65SJAkNsA5T",
+      "createSig": "22DpThJY4zVPRpR6Kknr5u38nHLrDQmGDhatt416fURs3yDABSuLkDaxTR8ZTuFctjn94UhwLqsY88JFrPRgQvVo",
+      "openSlot": 141,
+      "creatorBuy": {
+        "slotOffset": 0,
+        "feeBps": 100
+      },
+      "outsideBuys": [
+        {
+          "slotOffset": 2,
+          "feeBps": 3381,
+          "sig": "4uyv6oo2ApPYdjZUzW5TuvNJ8YpGE1BfZFT9RF9Nt6LANb62tph9JdCJuA6pS2HxkEQU6gGPBepXSdaStBwKPW3n"
+        },
+        {
+          "slotOffset": 9,
+          "feeBps": 860,
+          "sig": "Mw1KuWxrc5f3QYconCZBd6a6S3HahRnEde3Sub6UJnYxEnx4MkBtFw9qtHWD2bHK5JyKUTD6sgCuarub2vxMPTV"
+        }
+      ],
+      "snp10": 0.06011272,
+      "perSlot": [
+        0,
+        0,
+        0.025588334,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0.034524385
+      ],
+      "predictedCliffBps": 5000,
+      "creationSplit": {
+        "claimSig": "38rvU3hYxuxTu9mMfUJiC4yrtyKiF6cpo6TWxXRzPQsgisShLNej4VS5c7ARM9h7RPL8SH9MbxXRQFtYidUV63kV",
+        "author": 31500000,
+        "treasury": 13500000,
+        "presetTotalLamports": "45000000"
+      }
+    },
+    {
+      "preset": "Control",
+      "pool": "DqwCB4m1FKQMLPh42DJxq86gFXoiSEGpqvRqYtrDHEhn",
+      "createSig": "2icNN7KRjaeSVKFk2rhPHn8g87cne4rzGRxmHyGTMQLZqFE75BkWCCHEYJQdGtmAMwa5ayYpAWgBsdkeSktkpcko",
+      "openSlot": 152,
+      "creatorBuy": {
+        "slotOffset": 0,
+        "feeBps": 100
+      },
+      "outsideBuys": [
+        {
+          "slotOffset": 2,
+          "feeBps": 100,
+          "sig": "2GNKtTyyfs7e7BKcU49VobVaLbQDBXNr5V4QF3wxVTJSBc1XftoDQmzYWM4DNgBUhp5VFuZYooVpUcacdMEMS65i"
+        },
+        {
+          "slotOffset": 9,
+          "feeBps": 100,
+          "sig": "4Bc8YmQFDphJSrVmZ5f8DPTdnz8VtGua2psy1D6L1AQTBR1PXQHyMvcRTpDkfxKrVSbJpMNyM2Fuh2k42mqJFYDo"
+        }
+      ],
+      "snp10": 0.085828559,
+      "perSlot": [
+        0,
+        0,
+        0.044351111,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0.041477448
+      ],
+      "predictedCliffBps": 100,
+      "creationSplit": {
+        "claimSig": "47YKVhz67VbLdQHoFuDAWFRGfjBbMbAgXvXPum5d3izVWFKqurRvVSRLg3HE6VxPoEvXmHh4RzC1SLiv49f6hWYT",
+        "author": 31500000,
+        "treasury": 13500000,
+        "presetTotalLamports": "45000000"
+      }
+    }
+  ]
+}

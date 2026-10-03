@@ -32,7 +32,7 @@ if (config.solamiSwqosKey) {
 
 const stream = source === "grpc"
   ? await startGrpc(indexer, config.solamiToken, log)
-  : startRpcLogs(indexer, rpc, config.rpcUrl, config.wsUrl, log);
+  : startRpcLogs(indexer, rpc, rpc.url, config.wsUrl, log);
 log(`worker up: source=${source} landing=${beam ? "beam" : "rpc"} chainSlot=${indexer.chainSlot} captureStart=${captureStart}`);
 
 const every = (ms: number, fn: () => Promise<unknown>) => {
@@ -49,7 +49,7 @@ every(2_000, async function finalize() { await indexer.tick(); });
 if (source === "rpc") every(1_500, async function watched() { await indexer.pollWatched(); });
 every(config.aggEverySec * 1_000, async function agg() { const r = await aggregate(sql); log(`agg: ${r.windows} windows, ${r.configs} configs, ${r.ranked} ranked`); });
 every(5_000, async function health() {
-  const lag = indexer.lastSlot ? indexer.chainSlot - indexer.lastSlot : null;
+  const lag = indexer.lastSlot ? Math.max(0, indexer.chainSlot - indexer.lastSlot) : null;
   await sql`update health set last_slot = ${indexer.lastSlot}, chain_slot = ${indexer.chainSlot}, lag_slots = ${lag},
     reconnects = ${stream.reconnects()}, last_from_slot = ${stream.lastFromSlot()},
     pools_seen = pools_seen + ${indexer.stats.poolsSeen}, windows_final = windows_final + ${indexer.stats.windowsFinal},
@@ -63,9 +63,14 @@ every(300_000, async function prune() {
 
 const ownWallets = new Set((process.env.OWN_WALLETS ?? "").split(",").filter(Boolean));
 const json = (res: any, status: number, body: unknown) => {
+  if (res.headersSent) return;
+  const text = JSON.stringify(body, (_, v) => (typeof v === "bigint" ? v.toString() : v));
   res.writeHead(status, { "content-type": "application/json" });
-  res.end(JSON.stringify(body));
+  res.end(text);
 };
+// A failed request or a stray promise must never stop the indexer.
+process.on("unhandledRejection", (e: any) => log(`unhandled: ${e?.stack ?? e}`));
+process.on("uncaughtException", (e: any) => log(`uncaught: ${e?.stack ?? e}`));
 
 createServer(async (req, res) => {
   try {

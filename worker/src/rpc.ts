@@ -1,4 +1,6 @@
-// Rate-limited JSON-RPC client with retry on 429 / transient errors.
+// Rate-limited JSON-RPC client over one or more endpoints.
+// Each endpoint has its own per-second budget and backs off on 429; requests go to
+// whichever endpoint has budget, so keyless public endpoints can share the load.
 import type { RawTx } from "@curvebook/core";
 
 export class RpcError extends Error {
@@ -7,58 +9,89 @@ export class RpcError extends Error {
   }
 }
 
+type Endpoint = { url: string; tokens: number; pausedUntil: number; strikes: number };
+
 export class Rpc {
-  private queue: (() => void)[] = [];
-  private tokens: number;
+  private endpoints: Endpoint[];
+  private queue: ((e: Endpoint) => void)[] = [];
+  private next = 0;
   errors = 0;
 
-  constructor(readonly url: string, private rps: number) {
-    this.tokens = rps;
+  /** `urls` may be a comma-separated list. */
+  constructor(urls: string, private rps: number) {
+    this.endpoints = urls.split(",").map((u) => u.trim()).filter(Boolean).map((url) => ({ url, tokens: rps, pausedUntil: 0, strikes: 0 }));
     setInterval(() => {
-      this.tokens = this.rps;
-      while (this.tokens > 0 && this.queue.length) {
-        this.tokens--;
-        this.queue.shift()!();
-      }
+      for (const e of this.endpoints) e.tokens = this.rps;
+      this.drain();
     }, 1000).unref();
   }
 
-  private slot(): Promise<void> {
-    if (this.tokens > 0) {
-      this.tokens--;
-      return Promise.resolve();
-    }
-    return new Promise((r) => this.queue.push(r));
+  get url() {
+    return this.endpoints[0].url;
   }
 
   get backlog() {
     return this.queue.length;
   }
 
-  async call<T>(method: string, params: unknown[], attempts = 6): Promise<T> {
+  private pick(): Endpoint | null {
+    const now = Date.now();
+    for (let i = 0; i < this.endpoints.length; i++) {
+      const e = this.endpoints[(this.next + i) % this.endpoints.length];
+      if (e.tokens > 0 && e.pausedUntil <= now) {
+        this.next = (this.next + i + 1) % this.endpoints.length;
+        e.tokens--;
+        return e;
+      }
+    }
+    return null;
+  }
+
+  private drain() {
+    while (this.queue.length) {
+      const e = this.pick();
+      if (!e) return;
+      this.queue.shift()!(e);
+    }
+  }
+
+  private acquire(): Promise<Endpoint> {
+    const e = this.pick();
+    if (e) return Promise.resolve(e);
+    return new Promise((r) => this.queue.push(r));
+  }
+
+  async call<T>(method: string, params: unknown[], attempts = 8): Promise<T> {
     let last: unknown;
     for (let i = 0; i < attempts; i++) {
-      await this.slot();
+      const ep = await this.acquire();
       try {
-        const r = await fetch(this.url, {
+        const r = await fetch(ep.url, {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
           signal: AbortSignal.timeout(20_000),
         });
-        if (r.status === 429 || r.status >= 500) throw new RpcError(r.status, `HTTP ${r.status}`);
+        if (r.status === 429) {
+          ep.strikes++;
+          const retryAfter = Number(r.headers.get("retry-after")) || 0;
+          ep.pausedUntil = Date.now() + Math.max(retryAfter * 1000, Math.min(30_000, 1000 * 2 ** Math.min(ep.strikes, 5)));
+          throw new RpcError(429, `HTTP 429 from ${new URL(ep.url).host}`);
+        }
+        if (r.status >= 500) throw new RpcError(r.status, `HTTP ${r.status}`);
         const j: any = await r.json();
         if (j.error) {
-          // Not-yet-available data is retried; anything else is the caller's problem.
-          if (j.error.code === -32004 || j.error.code === -32007 || j.error.code === -32009) throw new RpcError(j.error.code, j.error.message);
+          // Data not available yet on this node: retry (possibly on another endpoint).
+          if ([-32004, -32007, -32009, -32014].includes(j.error.code)) throw new RpcError(j.error.code, j.error.message);
           throw Object.assign(new RpcError(j.error.code, j.error.message), { fatal: true });
         }
+        ep.strikes = 0;
         return j.result as T;
       } catch (e: any) {
         if (e?.fatal) throw e;
         last = e;
         this.errors++;
-        await new Promise((s) => setTimeout(s, 400 * 2 ** i));
+        await new Promise((s) => setTimeout(s, 250 * 2 ** Math.min(i, 4)));
       }
     }
     throw last;
