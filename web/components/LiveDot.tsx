@@ -29,10 +29,11 @@ export function LiveDot({ initial }: { initial: H }) {
   }, []);
   const live = now > 0 && isLive(h.lag, h.updatedAt, now);
   return (
-    <p className={`livedot ${live ? "on" : "off"}`} title={h.lag != null ? `stream lag ${h.lag} slots` : undefined}>
+    <p className={`livedot ${live ? "on" : "off"}`} suppressHydrationWarning title={h.lag != null ? `stream lag ${h.lag} slots` : undefined}>
       <span className="dot" aria-hidden="true" />
-      <span>{live ? "live" : "stale"}</span>
-      <span className="mono">slot {int(h.slot)}</span>
+      {/* time-dependent: the server render and the first client paint can disagree by a tick */}
+      <span suppressHydrationWarning>{live ? "live" : "stale"}</span>
+      <span className="mono" suppressHydrationWarning>slot {int(h.slot)}</span>
     </p>
   );
 }

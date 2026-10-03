@@ -2,7 +2,7 @@
 :root {
   --bg: #f3efe4;
   --ink: #1c1b18;
-  --muted: #6f6a5c;
+  --muted: #625d4f; /* ≥4.5:1 on --bg, --paper-2 and the row hover tint */
   --before: #c4122f;
   --after: #1e6b45;
   --rule: #d5cebb;
