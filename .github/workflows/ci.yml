@@ -1,9 +1,53 @@
-name: ci
-on: [push, pull_request]
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
+
 jobs:
-  ts:
+  # ── Stage 1 · Quality (parallel with Stage 2) ──────────────
+  quality:
+    name: "Stage 1 · Quality"
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: ${{ github.event_name == 'push' && fromJSON('[22, 24]') || fromJSON('[22]') }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "${{ matrix.node-version }}", cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - name: Lint
+        run: pnpm --filter @curvebook/web lint
+      - name: Typecheck (scripts, core, worker, web)
+        run: pnpm typecheck
+      - name: Unit + property tests (core, worker, web)
+        run: pnpm test
+
+  program:
+    name: "Stage 1 · Program (Rust unit tests)"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with: { workspaces: program }
+      - run: cargo test -p curvebook_router
+        working-directory: program
+
+  # ── Stage 2 · Security ─────────────────────────────────────
+  dependency-audit:
+    name: "Stage 2 · Dependency audit"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -11,12 +55,86 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: pnpm }
       - run: pnpm install --frozen-lockfile
-      - run: pnpm typecheck
-      - run: pnpm test
-  program-unit:
+      - run: pnpm audit --prod --audit-level=high
+        continue-on-error: true # transitive Solana deps; advisory, tracked by Dependabot
+
+  # ── Stage 3 · Build ────────────────────────────────────────
+  build:
+    name: "Stage 3 · Build (web + worker image)"
+    needs: [quality]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - run: cargo test -p curvebook_router
-        working-directory: program
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @curvebook/web build
+      - name: Bundle budget
+        run: |
+          KB=$(du -sk web/.next/static | cut -f1)
+          echo "static assets: ${KB} KB"
+          if [ "$KB" -gt 3000 ]; then echo "::error::static assets ${KB} KB exceed 3000 KB"; exit 1; fi
+      - name: Worker Docker image
+        run: docker build -f worker/Dockerfile -t curvebook-worker:ci .
+
+  # ── Stage 4 · E2E (schema + recorded mainnet snapshot) ─────
+  e2e:
+    name: "Stage 4 · E2E (Playwright)"
+    needs: [build]
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env: { POSTGRES_USER: curvebook, POSTGRES_PASSWORD: curvebook, POSTGRES_DB: curvebook }
+        ports: ["5433:5432"]
+        options: --health-cmd "pg_isready -U curvebook" --health-interval 2s --health-retries 20
+    env:
+      DATABASE_URL: postgres://curvebook:curvebook@localhost:5433/curvebook
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - name: Load the committed mainnet snapshot (CI replay — the product reads the live index)
+        run: pnpm exec tsx scripts/load-snapshot.ts
+      - run: pnpm --filter @curvebook/web exec playwright install --with-deps chromium
+      - run: pnpm --filter @curvebook/web build
+      - run: pnpm --filter @curvebook/web e2e
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with: { name: playwright-report, path: web/playwright-report/, retention-days: 7 }
+
+  # ── Stage 5 · Performance & accessibility ──────────────────
+  lighthouse:
+    name: "Stage 5 · Lighthouse"
+    needs: [build]
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env: { POSTGRES_USER: curvebook, POSTGRES_PASSWORD: curvebook, POSTGRES_DB: curvebook }
+        ports: ["5433:5432"]
+        options: --health-cmd "pg_isready -U curvebook" --health-interval 2s --health-retries 20
+    env:
+      DATABASE_URL: postgres://curvebook:curvebook@localhost:5433/curvebook
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec tsx scripts/load-snapshot.ts
+      - run: pnpm --filter @curvebook/web build
+      - run: pnpm --filter @curvebook/web lighthouse
+        continue-on-error: true # advisory until a hosted deploy exists
+
+  # ── Stage 6 · Deploy gate ──────────────────────────────────
+  deploy-gate:
+    name: "Stage 6 · Deploy gate"
+    needs: [quality, program, dependency-audit, build, e2e, lighthouse]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "All gates passed — quality, program, audit, build, e2e, lighthouse."

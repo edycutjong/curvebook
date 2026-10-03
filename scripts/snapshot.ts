@@ -9,14 +9,18 @@ const [h] = await sql`select capture_start_slot::float8 as start from health whe
 const [{ end }] = await sql`select coalesce(max(p.open_slot), 0)::float8 as end from pools p join pool_windows w on w.pool = p.address`;
 const n = (v: any) => (v == null ? null : Number(v));
 
-const pools = await sql`select p.address, p.config, p.creator, p.create_sig, p.create_slot::float8, p.open_slot::float8,
-  extract(epoch from p.created_at)::float8 as created_at, extract(epoch from p.graduated_at)::float8 as graduated_at
+const pools = await sql`select p.address, p.config, p.creator, p.base_mint, p.activation_point::text, p.create_sig, p.create_slot::float8, p.open_slot::float8,
+  extract(epoch from p.created_at)::float8 as created_at, extract(epoch from p.graduated_at)::float8 as graduated_at,
+  p.graduated_slot::float8, p.graduated_sig
   from pools p join pool_windows w on w.pool = p.address where p.open_slot <= ${end} order by p.create_slot`;
-const windows = await sql`select w.pool, w.config, w.creator, w.snp10, w.per_slot, w.buys, w.complete
+const windows = await sql`select w.pool, w.config, w.creator, w.snp10, w.per_slot, w.buys, w.complete, w.nc_wallets, w.top3_share,
+  w.creator_base::text, w.nc_base::text, w.nc_fees::text, w.source
   from pool_windows w join pools p on p.address = w.pool where p.open_slot <= ${end}`;
-const buys = await sql`select b.sig, b.pool, b.idx, b.slot::float8, b.slot_offset, b.payer, b.is_creator, b.base_out::text, b.quote_in::text
+const buys = await sql`select b.sig, b.pool, b.idx, b.slot::float8, b.slot_offset, b.payer, b.is_creator, b.via_cpi, b.fee::text, b.base_out::text, b.quote_in::text
   from window_buys b join pool_windows w on w.pool = b.pool join pools p on p.address = b.pool where p.open_slot <= ${end} order by b.slot, b.sig, b.idx`;
-const configs = await sql`select address, swap_base_amount::text, describe from configs where address in (select distinct config from pool_windows)`;
+const configs = await sql`select address, fee_claimer, quote_mint, activation_type, collect_fee_mode, token_type, swap_base_amount::text,
+  migration_quote_threshold::text, pool_creation_fee::text, base_fee, dynamic_fee, enable_first_swap_with_min_fee, creator_trading_fee_pct,
+  migration_option, describe, raw_b64 from configs where address in (select distinct config from pool_windows)`;
 const stats = await sql`select config, launches, snp10_p50, rank from config_stats`;
 
 const snap: Snapshot = {

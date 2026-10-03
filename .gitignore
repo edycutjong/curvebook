@@ -8,3 +8,10 @@ coverage/
 .DS_Store
 .run/
 fixtures/presets.localnet.json
+!.env.example
+/test-results/
+web/test-results/
+web/playwright-report/
+web/blob-report/
+.lighthouseci/
+web/.lighthouseci/
