@@ -206,3 +206,25 @@ function findParentSwap(group: FlatIx[], eventIdx: number): { payer: string; sta
   }
   return null;
 }
+
+export type MigrationEvent = { kind: "migration"; sig: string; slot: number; blockTime: number | null; pool: string; config: string };
+
+const MIGRATION_IXS = new Set(["migration_damm_v2", "migrate_meteora_damm"]);
+
+/** A pool graduates when its liquidity migrates to DAMM; the migrate ix names the virtual pool. */
+export function decodeMigrations(tx: RawTx): MigrationEvent[] {
+  if (!tx.meta || tx.meta.err) return [];
+  const out: MigrationEvent[] = [];
+  for (const group of flatten(tx)) {
+    for (const ix of group) {
+      if (ix.programId !== DBC_PROGRAM_ID) continue;
+      const meta = ixByDisc.get(ix.data.subarray(0, 8).toString("hex"));
+      if (!meta || !MIGRATION_IXS.has(meta.name)) continue;
+      out.push({
+        kind: "migration", sig: tx.transaction.signatures[0], slot: tx.slot, blockTime: tx.blockTime ?? null,
+        pool: ix.accounts[meta.accounts.indexOf("virtual_pool")], config: ix.accounts[meta.accounts.indexOf("config")],
+      });
+    }
+  }
+  return out;
+}
