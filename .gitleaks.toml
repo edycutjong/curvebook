@@ -1,0 +1,6 @@
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Recorded mainnet transactions (public on-chain data, base58 that looks like keys)"
+paths = ['''core/test/fixtures/.*\.json''']

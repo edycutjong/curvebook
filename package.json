@@ -27,5 +27,11 @@
     "bs58": "^6.0.0",
     "postgres": "^3.4.9"
   },
-  "type": "module"
+  "type": "module",
+  "pnpm": {
+    "overrides": {
+      "postcss": ">=8.5.18",
+      "toml": ">=4.2.0"
+    }
+  }
 }
