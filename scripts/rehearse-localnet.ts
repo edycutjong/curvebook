@@ -4,11 +4,12 @@
 //   → an outside wallet buys in the next slots → decode the window → claim_creation_split.
 // Writes fixtures/rehearsal-localnet.json. Nothing here is mainnet evidence; it proves the path.
 import { writeFileSync, mkdirSync } from "node:fs";
-import { Connection, Keypair, LAMPORTS_PER_SOL, PublicKey, Transaction } from "@solana/web3.js";
+import { ComputeBudgetProgram, Connection, Keypair, LAMPORTS_PER_SOL, PublicKey, Transaction } from "@solana/web3.js";
+import { NATIVE_MINT, getAssociatedTokenAddressSync } from "@solana/spl-token";
 import BN from "bn.js";
 import { DynamicBondingCurveClient } from "@meteora-ag/dynamic-bonding-curve-sdk";
 import {
-  buildLaunchTx, buildWindow, claimCreationSplitIx, decodePoolConfig, decodePreset, decodeTx, feeBps, presetPda,
+  buildLaunchTx, buildWindow, claimCreationSplitIx, claimTradingSplitIxs, decodePoolConfig, decodePreset, decodeTx, feeBps, presetPda,
   type SwapEvent,
 } from "@curvebook/core";
 import { deployAll, send } from "./lib/deploy.js";
@@ -75,6 +76,25 @@ for (const p of presets.filter((x) => x.slug !== "two-step")) {
   const before = { author: await conn.getBalance(author.publicKey), treasury: await conn.getBalance(treasury.publicKey) };
   const claimSig = await send(conn, new Transaction().add(claimCreationSplitIx({ config: new PublicKey(p.config), pool: built.pool, author: author.publicKey, treasury: treasury.publicKey })), [sniper]);
   const after = { author: await conn.getBalance(author.publicKey), treasury: await conn.getBalance(treasury.publicKey) };
+
+  // S8: the partner's trading-fee accrual equals Σ tradingFee × (100 − creator%) / 100 over decoded swaps.
+  const allSwaps = swaps.filter((s) => s.pool === built.pool.toBase58());
+  const decodedPartner = allSwaps.reduce((a, s) => a + (s.tradingFee * BigInt(100 - cfg.creatorTradingFeePct)) / 100n, 0n);
+  const fb0 = await dbc.state.getPoolFeeBreakdown(built.pool);
+  const sdkPartner = BigInt(fb0.partner.totalQuoteFee.toString());
+
+  // claim_trading_split via the core builder; I6: partner unclaimed fee drops by exactly what was split.
+  const wsol = (o: PublicKey) => getAssociatedTokenAddressSync(NATIVE_MINT, o, true);
+  const bal = async (o: PublicKey) => BigInt((await conn.getTokenAccountBalance(wsol(o)).catch(() => ({ value: { amount: "0" } }))).value.amount);
+  const tb = { author: await bal(author.publicKey), treasury: await bal(treasury.publicKey) };
+  const tradeSig = await send(conn, new Transaction().add(ComputeBudgetProgram.setComputeUnitLimit({ units: 400_000 }), ...claimTradingSplitIxs({
+    payer: sniper.publicKey, config: new PublicKey(p.config), pool: built.pool, baseMint: built.baseMint,
+    author: author.publicKey, treasury: treasury.publicKey, maxQuote: 2n ** 63n,
+  })), [sniper]);
+  const ta = { author: await bal(author.publicKey), treasury: await bal(treasury.publicKey) };
+  const fb1 = await dbc.state.getPoolFeeBreakdown(built.pool);
+  const split = ta.author - tb.author + (ta.treasury - tb.treasury);
+  const unclaimedDrop = BigInt(fb0.partner.unclaimedQuoteFee.toString()) - BigInt(fb1.partner.unclaimedQuoteFee.toString());
   const preset = decodePreset((await conn.getAccountInfo(presetPda(new PublicKey(p.config))))!.data);
 
   const feeOf = (s: SwapEvent) => (s.includedFeeInput === 0n ? 0 : Number(((s.includedFeeInput - s.excludedFeeInput) * 10_000n) / s.includedFeeInput));
@@ -89,12 +109,16 @@ for (const p of presets.filter((x) => x.slug !== "two-step")) {
     perSlot: w.perSlot,
     predictedCliffBps: feeBps(cfg.baseFee.cliffFeeNumerator),
     creationSplit: { claimSig, author: after.author - before.author, treasury: after.treasury - before.treasury, presetTotalLamports: preset.totalSplitLamports.toString() },
+    tradingSplit: { tradeSig, author: (ta.author - tb.author).toString(), treasury: (ta.treasury - tb.treasury).toString(), unclaimedDrop: unclaimedDrop.toString(), i6: split === unclaimedDrop },
+    s8: { decodedPartner: decodedPartner.toString(), sdkPartnerTotal: sdkPartner.toString(), equal: decodedPartner === sdkPartner },
   };
   results.push(r);
   console.log(`\n${p.name}: pool ${r.pool}`);
   console.log(`  creator first buy fee  ${r.creatorBuy.feeBps} bps`);
   for (const b of r.outsideBuys) console.log(`  outside buy slot +${b.slotOffset}  fee ${b.feeBps} bps`);
   console.log(`  SNP10 ${(r.snp10 * 100).toFixed(2)}%   creation fee split → author ${r.creationSplit.author} · treasury ${r.creationSplit.treasury} lamports`);
+  console.log(`  trading fee split → author ${r.tradingSplit.author} · treasury ${r.tradingSplit.treasury} wSOL atoms · I6 ${r.tradingSplit.i6 ? "holds" : "BROKEN"}`);
+  console.log(`  S8 partner fee: decoded ${r.s8.decodedPartner} vs SDK ${r.s8.sdkPartnerTotal} → ${r.s8.equal ? "equal" : "DIFFERENT"}`);
 }
 
 mkdirSync("fixtures", { recursive: true });

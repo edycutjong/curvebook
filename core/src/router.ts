@@ -1,6 +1,12 @@
 // Minimal client for the curvebook_router program: PDAs and instruction builders.
 import { BorshCoder, type Idl } from "@coral-xyz/anchor";
 import { PublicKey, SystemProgram, TransactionInstruction } from "@solana/web3.js";
+import {
+  ASSOCIATED_TOKEN_PROGRAM_ID, NATIVE_MINT, TOKEN_PROGRAM_ID,
+  createAssociatedTokenAccountIdempotentInstruction, getAssociatedTokenAddressSync,
+} from "@solana/spl-token";
+import { deriveDbcTokenVaultAddress } from "@meteora-ag/dynamic-bonding-curve-sdk";
+import BN from "bn.js";
 import idlJson from "./router-idl.json" with { type: "json" };
 import { DBC_PROGRAM_ID } from "./constants.js";
 
@@ -48,6 +54,48 @@ export function claimCreationSplitIx(a: { config: PublicKey; pool: PublicKey; au
     ],
     data: coder.instruction.encode("claim_creation_split", {}),
   });
+}
+
+export const DBC_POOL_AUTHORITY = new PublicKey("FhVo3mqL8PW5pH5U2CN4XE33DokiyZnUwuGpH2hmHLuM");
+
+/**
+ * claim_trading_split, preceded by the idempotent token-account creations it needs
+ * (vault base + wSOL accounts, author and treasury wSOL accounts). Anyone may send it.
+ */
+export function claimTradingSplitIxs(a: {
+  payer: PublicKey; config: PublicKey; pool: PublicKey; baseMint: PublicKey; author: PublicKey; treasury: PublicKey;
+  maxQuote: bigint; programId?: PublicKey;
+}): TransactionInstruction[] {
+  const programId = a.programId ?? ROUTER_PROGRAM_ID;
+  const vault = vaultPda(a.config, programId);
+  const ata = (mint: PublicKey, owner: PublicKey) => getAssociatedTokenAddressSync(mint, owner, true);
+  const atas: [PublicKey, PublicKey][] = [[a.baseMint, vault], [NATIVE_MINT, vault], [NATIVE_MINT, a.author], [NATIVE_MINT, a.treasury]];
+  const creates = atas.map(([mint, owner]) => createAssociatedTokenAccountIdempotentInstruction(a.payer, ata(mint, owner), owner, mint));
+  const claim = new TransactionInstruction({
+    programId,
+    keys: [
+      { pubkey: presetPda(a.config, programId), isSigner: false, isWritable: true },
+      { pubkey: a.config, isSigner: false, isWritable: false },
+      { pubkey: a.pool, isSigner: false, isWritable: true },
+      { pubkey: vault, isSigner: false, isWritable: false },
+      { pubkey: ata(a.baseMint, vault), isSigner: false, isWritable: true },
+      { pubkey: ata(NATIVE_MINT, vault), isSigner: false, isWritable: true },
+      { pubkey: ata(NATIVE_MINT, a.author), isSigner: false, isWritable: true },
+      { pubkey: ata(NATIVE_MINT, a.treasury), isSigner: false, isWritable: true },
+      { pubkey: deriveDbcTokenVaultAddress(a.pool, a.baseMint), isSigner: false, isWritable: true },
+      { pubkey: deriveDbcTokenVaultAddress(a.pool, NATIVE_MINT), isSigner: false, isWritable: true },
+      { pubkey: a.baseMint, isSigner: false, isWritable: false },
+      { pubkey: NATIVE_MINT, isSigner: false, isWritable: false },
+      { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
+      { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
+      { pubkey: ASSOCIATED_TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
+      { pubkey: DBC_POOL_AUTHORITY, isSigner: false, isWritable: false },
+      { pubkey: dbcEventAuthority(), isSigner: false, isWritable: false },
+      { pubkey: DBC, isSigner: false, isWritable: false },
+    ],
+    data: coder.instruction.encode("claim_trading_split", { max_quote: new BN(a.maxQuote.toString()) }),
+  });
+  return [...creates, claim];
 }
 
 export type PresetAccount = {
