@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Curvebook — a bonding curve rising out of its first ten slots: three cells struck red where outside wallets bought, seven ticked clear">
+  <title>Curvebook</title>
+  <defs>
+    <clipPath id="cb-cells">
+      <rect x="72"  y="352" width="34" height="56"/>
+      <rect x="109" y="352" width="34" height="56"/>
+      <rect x="183" y="352" width="34" height="56"/>
+    </clipPath>
+  </defs>
+
+  <!-- the printed card: self-plated so the mark holds on GitHub light AND dark -->
+  <rect x="24" y="24" width="464" height="464" rx="64" fill="var(--bg, #F3EFE4)" stroke="var(--ink, #1C1B18)" stroke-width="16"/>
+
+  <!-- the preset's form line: its last three starts as past strips, newest first (racing-form past performances) -->
+  <g fill="var(--before, #C4122F)">
+    <rect x="72" y="72" width="15" height="15"/><rect x="89" y="78" width="15" height="9"/>
+    <rect x="72" y="100" width="15" height="15"/><rect x="123" y="106" width="15" height="9"/><rect x="140" y="110" width="15" height="5"/>
+    <rect x="72" y="128" width="15" height="15"/><rect x="89" y="128" width="15" height="15"/><rect x="106" y="133" width="15" height="10"/><rect x="157" y="137" width="15" height="6"/>
+  </g>
+  <g fill="none" stroke="var(--ink, #1C1B18)" stroke-width="3" opacity="0.55">
+    <path d="M72 72h168v15H72zM72 100h168v15H72zM72 128h168v15H72z"/>
+    <path d="M89 72v15M106 72v15M123 72v15M140 72v15M157 72v15M174 72v15M191 72v15M208 72v15M225 72v15
+             M89 100v15M106 100v15M123 100v15M140 100v15M157 100v15M174 100v15M191 100v15M208 100v15M225 100v15
+             M89 128v15M106 128v15M123 128v15M140 128v15M157 128v15M174 128v15M191 128v15M208 128v15M225 128v15"/>
+  </g>
+
+  <!-- the bonding curve, rising out of slot 0 -->
+  <path d="M72 334 C 250 332, 372 290, 440 90" fill="none" stroke="var(--ink, #1C1B18)" stroke-width="30" stroke-linecap="round"/>
+
+  <!-- the 10-slot strip = the curve's x-axis. Red fills in proportion to the share outside wallets bought in that slot -->
+  <g clip-path="url(#cb-cells)" fill="var(--before, #C4122F)">
+    <rect x="72"  y="352"   width="34" height="56"/>
+    <rect x="109" y="373.3" width="34" height="34.7"/>
+    <rect x="183" y="386.7" width="34" height="21.3"/>
+  </g>
+  <g fill="none" stroke="var(--ink, #1C1B18)" stroke-width="6">
+    <rect x="72"  y="352" width="34" height="56"/>
+    <rect x="109" y="352" width="34" height="56"/>
+    <rect x="146" y="352" width="34" height="56"/>
+    <rect x="183" y="352" width="34" height="56"/>
+    <rect x="220" y="352" width="34" height="56"/>
+    <rect x="257" y="352" width="34" height="56"/>
+    <rect x="294" y="352" width="34" height="56"/>
+    <rect x="331" y="352" width="34" height="56"/>
+    <rect x="368" y="352" width="34" height="56"/>
+    <rect x="405" y="352" width="34" height="56"/>
+  </g>
+  <!-- held: green ticks on the seven clear slots -->
+  <g fill="none" stroke="var(--after, #1E6B45)" stroke-width="5.5" stroke-linecap="square" stroke-linejoin="miter">
+    <path d="M154 381 l6 7 l12 -16"/>
+    <path d="M228 381 l6 7 l12 -16"/>
+    <path d="M265 381 l6 7 l12 -16"/>
+    <path d="M302 381 l6 7 l12 -16"/>
+    <path d="M339 381 l6 7 l12 -16"/>
+    <path d="M376 381 l6 7 l12 -16"/>
+    <path d="M413 381 l6 7 l12 -16"/>
+  </g>
+</svg>
