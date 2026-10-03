@@ -1,2 +1,8 @@
 !.env.example
 *.tsbuildinfo
+playwright-report/
+test-results/
+blob-report/
+.lighthouseci/
+coverage/
+.next-*/

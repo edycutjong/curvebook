@@ -18,7 +18,7 @@ export const sql =
 /** Rows to plain JSON: int8 → number (slots and counts fit), Date → ISO. numeric stays a string. */
 export function plain<T>(v: unknown): T {
   return JSON.parse(
-    JSON.stringify(v, function (this: any, key, val) {
+    JSON.stringify(v, function (this: Record<string, unknown>, key, val) {
       const raw = this[key];
       if (typeof raw === "bigint") return Number(raw);
       if (raw instanceof Date) return raw.toISOString();

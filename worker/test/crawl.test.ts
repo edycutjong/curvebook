@@ -56,6 +56,12 @@ describe("crawlWindow on a real mainnet launch", () => {
     expect((await crawlWindow(rpc, ev, ev.slot, ev.slot + 50)).complete).toBe(false);
   });
 
+  it("window_is_incomplete_when_a_lagging_node_omits_the_creation_signature", async () => {
+    // A node behind the tip returned only later signatures; without the create tx the window may be short.
+    const rpc = ledger([{ signature: "later", slot: init.slot + 3, tx: init }]);
+    expect((await crawlWindow(rpc, ev, ev.slot, ev.slot + 50)).complete).toBe(false);
+  });
+
   it("waits when a future timestamp activation has no swap yet", async () => {
     const rpc = ledger([{ signature: init.transaction.signatures[0], slot: init.slot, tx: init }]);
     const future = { ...ev, activationPoint: 10n ** 12n };

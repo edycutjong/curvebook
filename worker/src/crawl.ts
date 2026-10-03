@@ -46,9 +46,12 @@ async function fetchAll(rpc: CrawlRpc, sigs: string[]): Promise<RawTx[]> {
  * reached at creation). For a future timestamp activation pass `open = null` and the
  * window starts at the first swap whose block timestamp reached the activation point.
  */
-export async function crawlWindow(rpc: CrawlRpc, init: Pick<InitEvent, "pool" | "slot" | "activationPoint">, open: number | null, chainSlot: number): Promise<CrawlResult> {
+export async function crawlWindow(rpc: CrawlRpc, init: Pick<InitEvent, "pool" | "slot" | "activationPoint" | "sig">, open: number | null, chainSlot: number): Promise<CrawlResult> {
   const to = open == null ? chainSlot : open + WINDOW_SLOTS - 1;
-  const { sigs, complete } = await poolSignatures(rpc, init.pool, init.slot, to);
+  const crawl = await poolSignatures(rpc, init.pool, init.slot, to);
+  const { sigs } = crawl;
+  // A lagging node can answer with a short list; the pool's own creation tx proves we reached its start.
+  const complete = crawl.complete && sigs.some((s) => s.signature === init.sig);
   const txs = await fetchAll(rpc, sigs.map((s) => s.signature));
   if (txs.length < sigs.length) return { open, swaps: [], complete: false, createBlockTime: null };
 

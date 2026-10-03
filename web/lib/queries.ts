@@ -58,7 +58,7 @@ export async function getFormRows(): Promise<FormRow[]> {
       s.grad_rate, coalesce(s.grad_aged, 0) as grad_aged, s.t_grad_p50, coalesce(s.eligible, false) as eligible,
       s.rank, coalesce(s.tied, false) as tied, p.name as preset_name, p.slug as preset_slug
     from config_stats s full outer join presets p on p.config = s.config`;
-  return rows.map((r: any) => ({
+  return rows.map((r) => ({
     config: r.config,
     launches: Number(r.launches),
     creators: Number(r.creators),
@@ -235,4 +235,35 @@ export async function getPresetBySlug(slug: string) {
       c.pool_creation_fee, c.quote_mint, c.raw_b64
     from presets p left join configs c on c.address = p.config where p.slug = ${slug}`;
   return row ? plain<Preset & { pool_creation_fee: string | null; quote_mint: string | null; raw_b64: string | null }>(row) : null;
+}
+
+export type JudgeFacts = {
+  health: Health | null;
+  pools: number;
+  configs: number;
+  buys: number;
+  receiptPool: string | null;
+  topConfig: { config: string; launches: number; name: string | null } | null;
+};
+
+/** Everything /judge prints, in one round trip per figure. No figure is computed outside the DB. */
+export async function getJudgeFacts(): Promise<JudgeFacts> {
+  const [[h], [c], [receipt], [top]] = await Promise.all([
+    sql`select * from health where id = 1`,
+    sql`select (select count(*) from pools) as pools,
+               (select count(distinct config) from pools) as configs,
+               (select count(*) from window_buys) as buys`,
+    sql`select w.pool from pool_windows w join pools p on p.address = w.pool
+        where w.snp10 > 0 order by p.create_slot desc limit 1`,
+    sql`select p.config, count(*) as launches, max(pr.name) as name from pools p
+        left join presets pr on pr.config = p.config
+        group by p.config order by count(*) desc, p.config limit 1`,
+  ]);
+  const counts = plain<{ pools: number; configs: number; buys: number }>(c);
+  return {
+    health: h ? plain<Health>(h) : null,
+    ...counts,
+    receiptPool: receipt ? (receipt.pool as string) : null,
+    topConfig: top ? plain<{ config: string; launches: number; name: string | null }>(top) : null,
+  };
 }
