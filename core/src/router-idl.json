@@ -1,0 +1,597 @@
+{
+  "address": "4bjaHzaDTYxKiJ7fTMWTyMbHkQtG8t1rc8nNcHHk4iKd",
+  "metadata": {
+    "name": "curvebook_router",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Splits Meteora DBC partner fees between a preset author and a treasury"
+  },
+  "instructions": [
+    {
+      "name": "claim_creation_split",
+      "discriminator": [
+        63,
+        22,
+        3,
+        39,
+        114,
+        94,
+        140,
+        4
+      ],
+      "accounts": [
+        {
+          "name": "preset",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  101,
+                  115,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "dbc_config"
+              }
+            ]
+          }
+        },
+        {
+          "name": "dbc_config",
+          "relations": [
+            "preset"
+          ]
+        },
+        {
+          "name": "pool",
+          "writable": true
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "dbc_config"
+              }
+            ]
+          }
+        },
+        {
+          "name": "author",
+          "writable": true,
+          "relations": [
+            "preset"
+          ]
+        },
+        {
+          "name": "treasury",
+          "writable": true,
+          "relations": [
+            "preset"
+          ]
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "dbc_event_authority",
+          "address": "8Ks12pbrD6PXxfty1hVQiE9sc289zgU1zHkvXhrSdriF"
+        },
+        {
+          "name": "dbc_program",
+          "address": "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "claim_trading_split",
+      "discriminator": [
+        6,
+        88,
+        99,
+        85,
+        27,
+        43,
+        150,
+        125
+      ],
+      "accounts": [
+        {
+          "name": "preset",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  101,
+                  115,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "dbc_config"
+              }
+            ]
+          }
+        },
+        {
+          "name": "dbc_config",
+          "relations": [
+            "preset"
+          ]
+        },
+        {
+          "name": "pool",
+          "writable": true
+        },
+        {
+          "name": "vault",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "dbc_config"
+              }
+            ]
+          }
+        },
+        {
+          "name": "vault_base_account",
+          "docs": [
+            "Required by DBC even though max_amount_a = 0; must be the vault's, so a stray",
+            "base payout could never leave the router's custody."
+          ],
+          "writable": true
+        },
+        {
+          "name": "vault_quote_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "account",
+                "path": "token_quote_program"
+              },
+              {
+                "kind": "account",
+                "path": "quote_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140,
+                151,
+                37,
+                143,
+                78,
+                36,
+                137,
+                241,
+                187,
+                61,
+                16,
+                41,
+                20,
+                142,
+                13,
+                131,
+                11,
+                90,
+                19,
+                153,
+                218,
+                255,
+                16,
+                132,
+                4,
+                142,
+                123,
+                216,
+                219,
+                233,
+                248,
+                89
+              ]
+            }
+          }
+        },
+        {
+          "name": "author_quote_account",
+          "writable": true
+        },
+        {
+          "name": "treasury_quote_account",
+          "writable": true
+        },
+        {
+          "name": "base_vault",
+          "writable": true
+        },
+        {
+          "name": "quote_vault",
+          "writable": true
+        },
+        {
+          "name": "base_mint"
+        },
+        {
+          "name": "quote_mint",
+          "relations": [
+            "preset"
+          ]
+        },
+        {
+          "name": "token_base_program"
+        },
+        {
+          "name": "token_quote_program"
+        },
+        {
+          "name": "associated_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "dbc_pool_authority",
+          "address": "FhVo3mqL8PW5pH5U2CN4XE33DokiyZnUwuGpH2hmHLuM"
+        },
+        {
+          "name": "dbc_event_authority",
+          "address": "8Ks12pbrD6PXxfty1hVQiE9sc289zgU1zHkvXhrSdriF"
+        },
+        {
+          "name": "dbc_program",
+          "address": "dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN"
+        }
+      ],
+      "args": [
+        {
+          "name": "max_quote",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "register_preset",
+      "discriminator": [
+        138,
+        109,
+        237,
+        61,
+        79,
+        223,
+        29,
+        49
+      ],
+      "accounts": [
+        {
+          "name": "author",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "dbc_config",
+          "docs": [
+            "The DBC config keypair must co-sign. Its fee claimer is a public, derivable PDA, so",
+            "without this anyone could front-run the creator and register themselves as author;",
+            "the config key only ever signs in the creator's own `create_config` transaction."
+          ],
+          "signer": true
+        },
+        {
+          "name": "vault",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "dbc_config"
+              }
+            ]
+          }
+        },
+        {
+          "name": "preset",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  101,
+                  115,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "dbc_config"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "author_bps",
+          "type": "u16"
+        },
+        {
+          "name": "treasury",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
+      "name": "set_split",
+      "discriminator": [
+        133,
+        67,
+        66,
+        245,
+        114,
+        175,
+        32,
+        51
+      ],
+      "accounts": [
+        {
+          "name": "author",
+          "signer": true,
+          "relations": [
+            "preset"
+          ]
+        },
+        {
+          "name": "preset",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112,
+                  114,
+                  101,
+                  115,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "preset.dbc_config",
+                "account": "Preset"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "author_bps",
+          "type": "u16"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "Preset",
+      "discriminator": [
+        0,
+        20,
+        95,
+        225,
+        110,
+        88,
+        220,
+        190
+      ]
+    }
+  ],
+  "events": [
+    {
+      "name": "RoyaltySplit",
+      "discriminator": [
+        123,
+        7,
+        225,
+        206,
+        42,
+        89,
+        165,
+        204
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "InvalidAuthorBps",
+      "msg": "author_bps must be <= 9000"
+    },
+    {
+      "code": 6001,
+      "name": "NotDbcAccount",
+      "msg": "Account is not owned by the Meteora DBC program"
+    },
+    {
+      "code": 6002,
+      "name": "InvalidDbcAccount",
+      "msg": "Account data does not match the expected DBC account type"
+    },
+    {
+      "code": 6003,
+      "name": "FeeClaimerMismatch",
+      "msg": "DBC config fee_claimer is not this preset's vault PDA"
+    },
+    {
+      "code": 6004,
+      "name": "UnsupportedCollectFeeMode",
+      "msg": "DBC config must collect fees in the quote token (collect_fee_mode = 0)"
+    },
+    {
+      "code": 6005,
+      "name": "PoolConfigMismatch",
+      "msg": "DBC pool belongs to a different config than this preset"
+    },
+    {
+      "code": 6006,
+      "name": "NothingToClaim",
+      "msg": "Nothing was claimed from DBC"
+    },
+    {
+      "code": 6007,
+      "name": "MathOverflow",
+      "msg": "Arithmetic overflow"
+    }
+  ],
+  "types": [
+    {
+      "name": "Preset",
+      "docs": [
+        "One registered DBC config (\"preset\"). Its vault PDA is the config's DBC fee claimer."
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "author",
+            "type": "pubkey"
+          },
+          {
+            "name": "dbc_config",
+            "type": "pubkey"
+          },
+          {
+            "name": "author_bps",
+            "type": "u16"
+          },
+          {
+            "name": "treasury",
+            "type": "pubkey"
+          },
+          {
+            "name": "quote_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "launches_claimed",
+            "docs": [
+              "Pool-creation fees claimed — one per launch on this preset."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "total_split_quote",
+            "type": "u64"
+          },
+          {
+            "name": "total_split_lamports",
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          },
+          {
+            "name": "vault_bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "RoyaltySplit",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "preset",
+            "type": "pubkey"
+          },
+          {
+            "name": "pool",
+            "type": "pubkey"
+          },
+          {
+            "name": "kind",
+            "docs": [
+              "0 = partner trading fee (quote token), 1 = partner pool-creation fee (lamports)."
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "claimed",
+            "type": "u64"
+          },
+          {
+            "name": "author_amount",
+            "type": "u64"
+          },
+          {
+            "name": "treasury_amount",
+            "type": "u64"
+          }
+        ]
+      }
+    }
+  ]
+}

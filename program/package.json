@@ -1,0 +1,28 @@
+{
+  "name": "@curvebook/program",
+  "private": true,
+  "license": "MIT",
+  "scripts": {
+    "fixtures": "./scripts/fetch-fixtures.sh",
+    "build": "anchor build",
+    "test:unit": "cargo test -p curvebook_router",
+    "test": "./scripts/fetch-fixtures.sh && cargo test -p curvebook_router && anchor test"
+  },
+  "dependencies": {
+    "@coral-xyz/anchor": "0.31.1",
+    "@meteora-ag/dynamic-bonding-curve-sdk": "1.5.13",
+    "@solana/spl-token": "^0.4.13",
+    "@solana/web3.js": "^1.98.0",
+    "bn.js": "^5.2.1"
+  },
+  "devDependencies": {
+    "@types/bn.js": "^5.1.6",
+    "@types/chai": "^4.3.0",
+    "@types/mocha": "^10.0.0",
+    "@types/node": "^22.0.0",
+    "chai": "^4.4.1",
+    "mocha": "^10.4.0",
+    "ts-mocha": "^10.0.0",
+    "typescript": "^5.6.0"
+  }
+}
