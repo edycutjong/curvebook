@@ -7,6 +7,7 @@ import { Rpc } from "./rpc.js";
 import { Indexer } from "./indexer.js";
 import { aggregate } from "./agg.js";
 import { land, LandError, type Beamer } from "./lander.js";
+import { toJson } from "./json.js";
 import { startRpcLogs } from "./sources/rpc-logs.js";
 import { startGrpc } from "./sources/grpc.js";
 
@@ -64,7 +65,7 @@ every(300_000, async function prune() {
 const ownWallets = new Set((process.env.OWN_WALLETS ?? "").split(",").filter(Boolean));
 const json = (res: any, status: number, body: unknown) => {
   if (res.headersSent) return;
-  const text = JSON.stringify(body, (_, v) => (typeof v === "bigint" ? v.toString() : v));
+  const text = toJson(body);
   res.writeHead(status, { "content-type": "application/json" });
   res.end(text);
 };
