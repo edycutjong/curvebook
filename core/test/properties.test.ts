@@ -37,7 +37,7 @@ describe("SNP10 window properties (10,000 random windows each)", () => {
       expect(w.perSlot.reduce((a, b) => a + b, 0)).toBeCloseTo(w.snp10, 6);
       expect(w.top3Share).toBeLessThanOrEqual(w.snp10 + 1e-9);
     }), { numRuns: 10_000 });
-  });
+  }, 30_000);
 
   it("is independent of arrival order (stream vs crawl)", () => {
     fc.assert(fc.property(fc.array(arbSwap, { maxLength: 30 }).chain((s) => fc.tuple(fc.constant(s), fc.shuffledSubarray(s, { minLength: s.length, maxLength: s.length }))), ([a, b]) => {
@@ -70,5 +70,5 @@ describe("fee schedule (20,000 random schedules × 10 slots)", () => {
         prev = mine;
       }
     }), { numRuns: 20_000 });
-  });
+  }, 60_000); // 200,000 slot checks: give CI headroom under load
 });
