@@ -22,8 +22,10 @@ What building Curvebook taught us about the sponsor tooling, in the order we hit
 | Yellowstone delivers raw bytes; decoders written for `getTransaction` JSON need a shim | Two code paths to keep equal | `yellowstoneToRawTx` + a test that both paths decode identical events on real fixtures |
 | `client.beam()` takes a `VersionedTransaction` | Launch txs must be v0 | `buildLaunchTx` compiles a v0 message |
 | Blur's DEX list doesn't name Meteora DBC | Can't rely on decoded trade feeds for DBC | Decode ourselves from the gRPC stream |
+| (2026-10-04, live key, SDK 0.1.56) A Free-plan `subscribe` fails with `1 CANCELLED: Call cancelled`; the real reason is only in the trailing metadata: `grpc-status 7`, *"gRPC streaming requires a plan that includes gRPC access…"* (an invalid key gives `16 invalid api key` the same way) | Looks like a network bug, not a plan limit; unary `getVersion`/`getSlot` succeed even with a bad key, so they can't be used as an auth check | Log the stream's `metadata` event; surface `grpc-message` |
+| `withSwqos(key)` base58-decodes the key and uses 32 bytes as the QUIC identity seed; a dashboard "API key" is not base58 and fails with `Non-base58 character` | The "one scoped key" type doesn't work for Beam from the TS SDK | Create a dedicated SwQoS key |
 
-## Keyless fallback (documented, used during development)
+## Keyless mode (the live deployment)
 Without a Solami token the worker discovers launches from the public `logsSubscribe` stream (≈35 DBC tx/s, ≈2–5 launches/min)
 and reads each window from confirmed signatures of the pool account. Public endpoints rate-limit `getTransaction`;
 spreading requests over two endpoints with per-endpoint backoff kept retries invisible.

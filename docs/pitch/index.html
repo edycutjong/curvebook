@@ -173,7 +173,7 @@ live config_stats vs recomputed: <span class="ok">identical</span>
 <section class="slide" data-title="How it works">
   <p class="label">Down the stretch</p>
   <h2 class="h">One flow, <em>end to end</em></h2>
-  <div class="grow"><svg viewBox="0 0 1680 560" style="width:100%" role="img" aria-label="Pipeline: Meteora DBC on Solana, Solami Yellowstone gRPC, decode and pair payer, ten-slot window re-read from confirmed signatures, the Form; launch on a preset through buildLaunchTx and the relay, royalties through curvebook_router.">
+  <div class="grow"><svg viewBox="0 0 1680 560" style="width:100%" role="img" aria-label="Pipeline: Meteora DBC on Solana, public RPC logs, decode and pair payer, ten-slot window re-read from confirmed signatures, the Form; launch on a preset through buildLaunchTx and the relay, royalties through curvebook_router.">
     <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="#1C1B18"/></marker></defs>
     <g font-family="IBM Plex Mono, monospace" font-size="20" fill="#1C1B18">
       <g stroke="#1C1B18" stroke-width="3" fill="#F3EFE4">
@@ -182,8 +182,8 @@ live config_stats vs recomputed: <span class="ok">identical</span>
       </g>
       <g stroke="#1C1B18" stroke-width="3" fill="none" marker-end="url(#ar)"><path d="M250 115h82"/><path d="M590 115h82"/><path d="M980 115h82"/><path d="M1340 115h82"/><path d="M640 425h82"/><path d="M1030 425h82"/><path d="M1555 190 V 425 H 1428"/><path d="M125 190 V 425 H 332"/></g>
       <g font-family="Big Shoulders Display, sans-serif" font-weight="900" font-size="34" text-transform="uppercase">
-        <text x="22" y="98">METEORA DBC</text><text x="362" y="98">SOLAMI gRPC</text><text x="702" y="98">DECODE + PAIR</text><text x="1092" y="98">10-SLOT WINDOW</text><text x="1452" y="98" fill="#F3EFE4">THE FORM</text>
-        <text x="362" y="408">BUILDLAUNCHTX</text><text x="752" y="408">RELAY + BEAM</text><text x="1142" y="408">ROUTER SPLIT</text>
+        <text x="22" y="98">METEORA DBC</text><text x="362" y="98">RPC LOGS</text><text x="702" y="98">DECODE + PAIR</text><text x="1092" y="98">10-SLOT WINDOW</text><text x="1452" y="98" fill="#F3EFE4">THE FORM</text>
+        <text x="362" y="408">BUILDLAUNCHTX</text><text x="752" y="408">RELAY + LAND</text><text x="1142" y="408">ROUTER SPLIT</text>
       </g>
       <text x="22" y="140">Solana mainnet</text><text x="22" y="168">event-CPI</text>
       <text x="362" y="140">from_slot replay</text><text x="362" y="168">(keyless fallback)</text>
@@ -197,7 +197,7 @@ live config_stats vs recomputed: <span class="ok">identical</span>
     </g>
   </svg></div>
   <div class="foot"><span>ARCHITECTURE.md · core/ worker/ web/ program/</span><span>Card 05</span></div>
-  <aside class="speaker-notes">Top row is measurement: Solami streams every DBC transaction, we decode each buy and pair it with the wallet that paid, then re-read the window from confirmed signatures so forks can't fake it. Bottom row is action: launch on a preset, and the router splits the fees on-chain.</aside>
+  <aside class="speaker-notes">Top row is measurement: public RPC streams every DBC transaction, we decode each buy and pair it with the wallet that paid, then re-read the window from confirmed signatures so forks can't fake it. Bottom row is action: launch on a preset, and the router splits the fees on-chain.</aside>
 </section>
 
 <!-- 6 LIVE DEMO -->

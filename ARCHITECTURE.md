@@ -9,14 +9,14 @@ flowchart LR
     R[curvebook_router\nvault PDA = fee_claimer]
   end
   subgraph src[Data sources]
-    G[Solami Yellowstone gRPC\nsubscribe DBC · from_slot replay]
-    L[keyless fallback\nlogsSubscribe + public RPC]
+    G[optional: Solami Yellowstone gRPC\nfrom_slot replay · off in the live deployment]
+    L[live source\nlogsSubscribe + public RPC]
   end
   subgraph worker[worker · Node 22]
     IX[indexer\ndecode EvtInitializePool / EvtSwap2\npayer = parent swap ix]
     CR[crawl\nwindow from confirmed signatures]
     AG[aggregate\nSNP10 p50 · 90% CI · eligibility]
-    LD[lander\nrelay guard · simulate · Beam / RPC]
+    LD[lander\nrelay guard · simulate · RPC send]
   end
   DB[(Postgres / Supabase)]
   WEB[Next.js\nForm · Preset · Launch · Receipt · Verify]
@@ -36,7 +36,7 @@ flowchart LR
 |---|---|
 | `core/` | Pure TypeScript shared by everything: DBC event-CPI decoder with payer pairing (`decode.ts`), PoolConfig decoding and the SDK-exact fee scheduler (`config.ts`), plain-language readout (`describe.ts`), the 10-slot window and SNP10 (`window.ts`), Form statistics with seeded bootstrap CIs (`stats.ts`), `buildLaunchTx` (`launch.ts`), preset definitions (`presets.ts`), router client (`router.ts`) |
 | `program/` | `curvebook_router` Anchor program — see `docs/AUDIT-SCOPE.md` |
-| `worker/` | Long-lived indexer + lander. Two sources (Solami gRPC, keyless logs), one finalization path, aggregator, `/beam` + `/health` HTTP |
+| `worker/` | Long-lived indexer + lander. Two sources (keyless logs, live; optional Solami gRPC), one finalization path, aggregator, `/beam` + `/health` HTTP |
 | `web/` | Next.js App Router UI and API routes |
 | `scripts/` | `pnpm proof` chain, preset deploy, claim crank, localnet rehearsal, spikes |
 | `db/schema.sql` | The whole schema; the worker applies it on start |
@@ -59,7 +59,7 @@ windows (`worker/test/grpc.test.ts` proves the decoder sees the same events from
 ## Landing a launch
 1. `POST /api/launch/build` → `buildLaunchTx`: `getPoolConfig` → SDK quote of the creator's bundled buy at slot 0 (sets `minimumAmountOut`; throws if the curve can't absorb it) → `createPoolWithFirstBuy` → v0 message, signed by a fresh base-mint key. Its message hash is stored with a 90 s expiry.
 2. The creator's wallet signs.
-3. `POST /beam` on the worker: refuses any transaction whose message hash it did not issue (not an open relay), simulates, sends via Solami Beam (or RPC), resends the **same bytes** until confirmed or the blockhash expires — a retry can never create a second pool.
+3. `POST /beam` on the worker: refuses any transaction whose message hash it did not issue (not an open relay), simulates, sends via RPC (or the optional Solami Beam adapter), resends the **same bytes** until confirmed or the blockhash expires — a retry can never create a second pool.
 
 ## Royalties
 The preset's DBC config names the router vault as `fee_claimer`. Anyone cranks `claim_creation_split` / `claim_trading_split`;

@@ -499,7 +499,7 @@ live config_stats vs recomputed: <span class="ok">identical</span>
       <details><summary>What isn't on mainnet yet?</summary><p>The three presets are live on mainnet with one own launch each (DEMO.md §1b), and their fees are claimed there. The royalty router that splits those fees author/treasury runs on devnet, with every step on the explorer (DEMO.md §3b); until it moves, mainnet presets name the author's wallet as fee claimer.</p></details>
       <details><summary>What counts as an "outside" buy?</summary><p>Any buy whose paying key is not the pool creator's. The payer comes from the DBC swap instruction that emitted the event, so aggregator-routed buys are attributed too. Creator-funded wallets count as outside, and the page says so.</p></details>
       <details><summary>Can a launchpad farm a good rank?</summary><p>Not cheaply. A config needs at least 20 complete windows from at least 5 creators, the top creator's share of launches is printed, and ranks tie when the 90% intervals overlap.</p></details>
-      <details><summary>Where does Solami come in?</summary><p>Yellowstone gRPC streams every DBC transaction with <code>from_slot</code> replay for gapless reconnects, and Beam lands launches with a public receipt. Without a key the worker falls back to public RPC, so anyone can run it.</p></details>
+      <details><summary>What does the live index run on?</summary><p>Public Solana RPC, no paid keys: it discovers launches from <code>logsSubscribe</code> and re-reads every ten-slot window from confirmed signatures, so anyone can run it. An optional Yellowstone gRPC adapter is in the code but switched off in the live deployment.</p></details>
       <details><summary>Can my launchpad use it without your UI?</summary><p>Yes. Call <code>buildLaunchTx</code> from your own backend (examples/launch-on-preset.ts). The preset's royalty is enforced by its on-chain config, not by our frontend.</p></details>
     </div>
   </div>
@@ -509,7 +509,7 @@ live config_stats vs recomputed: <span class="ok">identical</span>
 <footer><div class="wrap">
   <a class="logo" href="#top"><img src="img/icon.svg" alt="" width="26" height="26">CURVE<b>BOOK</b></a>
   <nav aria-label="Footer"><a href="https://github.com/edycutjong/curvebook">GitHub</a><a href="pitch/">Pitch Deck</a><a href="https://x.com/edycutjong/status/2106581843499954490">Build thread</a><a href="https://github.com/edycutjong/curvebook/blob/main/DEMO.md">Receipts</a><a href="https://github.com/edycutjong/curvebook/blob/main/LICENSE">MIT</a></nav>
-  <small>Built for Colosseum World's Fair 2026 · Meteora DBC · Solami · Solana</small>
+  <small>Built for Colosseum World's Fair 2026 · Meteora DBC · Solana</small>
 </div></footer>
 
 <script>

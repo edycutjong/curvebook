@@ -130,7 +130,7 @@ pnpm rehearse`}</pre>
           <li>The three presets are live on mainnet with one own launch each (DEMO.md §1b); the router that splits their fees runs on devnet (DEMO.md §3b), not on mainnet yet.</li>
           <li>The index covers only launches since capture start; nothing earlier is backfilled.</li>
           <li>Creator-funded sybil wallets count as outsiders.</li>
-          <li>Keyless mode reads windows from public RPC; Solami gRPC is used when a token is set.</li>
+          <li>Keyless mode reads windows from public RPC; an optional Solami gRPC adapter exists but is not used in the live deployment.</li>
         </ul>
       </section>
 

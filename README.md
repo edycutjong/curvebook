@@ -14,7 +14,6 @@
 
   ![Solana](https://img.shields.io/badge/Solana_mainnet-9945FF?style=flat&logo=solana&logoColor=white)
   ![Meteora DBC](https://img.shields.io/badge/Meteora-DBC_0.2.1-1C1B18?style=flat)
-  ![Solami](https://img.shields.io/badge/Solami-gRPC_·_Beam-1C1B18?style=flat)
   ![Anchor](https://img.shields.io/badge/Anchor-0.31.1-1C1B18?style=flat)
   ![Next.js](https://img.shields.io/badge/Next.js_15-black?style=flat&logo=next.js)
   ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=typescript&logoColor=white)
@@ -73,10 +72,10 @@ worst gave up **90.7%** of its curve in slot 0 ([DEMO.md](DEMO.md)).
 | Layer | What | Where |
 |---|---|---|
 | Decode | DBC event-CPI → `EvtInitializePool` / `EvtSwap2` / `EvtCurveComplete` + payer pairing; v0 and v1 transactions | [`core/src/decode.ts`](core/src/decode.ts) |
-| Index | Solami Yellowstone gRPC (`from_slot` replay), or keyless public `logsSubscribe`; windows finalized from confirmed signatures | [`worker/`](worker/src) |
+| Index | public `logsSubscribe` + crawl (the live deployment), or an optional Yellowstone gRPC adapter with `from_slot` replay; windows finalized from confirmed signatures | [`worker/`](worker/src) |
 | Rank | SNP10 median, p90, seeded 1,000-resample bootstrap CI, D9 eligibility, tie when CIs overlap | [`core/src/stats.ts`](core/src/stats.ts) |
 | Launch | `buildLaunchTx`: `getPoolConfig` → `getQuoteFromInputAmount` → `createPoolWithFirstBuy` → v0 tx | [`core/src/launch.ts`](core/src/launch.ts) |
-| Land | relay guard (message hash issued + single use) → simulate → Solami Beam / RPC → same-bytes resend | [`worker/src/lander.ts`](worker/src/lander.ts) |
+| Land | relay guard (message hash issued + single use) → simulate → RPC send (optional Beam adapter) → same-bytes resend | [`worker/src/lander.ts`](worker/src/lander.ts) |
 | Royalties | `curvebook_router`: `register_preset`, `claim_trading_split`, `claim_creation_split`, `set_split` | [`program/`](program/programs/curvebook_router/src) · [audit scope](docs/AUDIT-SCOPE.md) |
 | UI | Next.js 15: The Form, preset page with toll row, launch, receipt, `/integrations/verify`, `/judge` | [`web/`](web/app) |
 
@@ -89,9 +88,10 @@ Diagram and design notes: [ARCHITECTURE.md](ARCHITECTURE.md).
 `deriveDbcPoolAddress`, `deriveDbcTokenVaultAddress`, plus on-chain CPI of `claim_trading_fee` and `claim_partner_pool_creation_fee`, and event
 decoding against IDL 0.2.1. Friction we hit is written up in [docs/DX-REPORT.md](docs/DX-REPORT.md).
 
-**Solami is the data path and the landing path.** Yellowstone gRPC `subscribe` with `SubscriptionBuilder.fromSlot()` for gapless reconnects
-([`grpc.ts`](worker/src/sources/grpc.ts)), Solami RPC for confirmations and crawls, and `client.beam()` + `GET /swqos/tx/{sig}` for landing
-receipts ([`lander.ts`](worker/src/lander.ts)). Set `SOLAMI_RPC_TOKEN` / `SOLAMI_SWQOS_KEY` to switch them on; the keyless fallback exists so anyone can run it.
+**The live deployment is keyless.** It discovers launches from public `logsSubscribe`, re-reads every window from confirmed signatures,
+and lands launches with plain `sendTransaction`. An optional Solami adapter is in the code but **not used live**: Yellowstone gRPC with
+`fromSlot()` replay ([`grpc.ts`](worker/src/sources/grpc.ts)) and Beam landing ([`lander.ts`](worker/src/lander.ts)), switched on by
+`SOLAMI_RPC_TOKEN` / `SOLAMI_SWQOS_KEY`. Its decoding is tested against the same fixtures as the RPC path; it has not been run against mainnet.
 
 ## 🚀 Getting started
 
@@ -146,4 +146,4 @@ docs/       AUDIT-SCOPE, DX-REPORT, spike notes, images
 [MIT](LICENSE) © 2026 Edy Cu
 
 ## 🙏 Acknowledgments
-Built for Colosseum World's Fair 2026. Thanks to Meteora for DBC and its SDK, and to Solami for gRPC, RPC and Beam.
+Built for Colosseum World's Fair 2026. Thanks to Meteora for DBC and its SDK, and to Solami for the SDK behind the optional gRPC/Beam adapter.
