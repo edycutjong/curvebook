@@ -21,6 +21,13 @@
   ![Postgres](https://img.shields.io/badge/Postgres-4169E1?style=flat&logo=postgresql&logoColor=white)
   ![License: MIT](https://img.shields.io/badge/license-MIT-1C1B18?style=flat)
 
+  <br/>
+
+  [![CI/CD](https://github.com/edycutjong/curvebook/actions/workflows/ci.yml/badge.svg)](https://github.com/edycutjong/curvebook/actions/workflows/ci.yml)
+  [![CodeQL](https://github.com/edycutjong/curvebook/actions/workflows/codeql.yml/badge.svg)](https://github.com/edycutjong/curvebook/actions/workflows/codeql.yml)
+  [![gitleaks](https://github.com/edycutjong/curvebook/actions/workflows/gitleaks.yml/badge.svg)](https://github.com/edycutjong/curvebook/actions/workflows/gitleaks.yml)
+  ![Coverage](https://img.shields.io/badge/coverage-100%25-1E6B45?style=flat)
+
 </div>
 
 ---
@@ -101,13 +108,13 @@ Reproduce the numbers: `pnpm proof` (snapshot → offline recompute → 20 sampl
 
 ## 🧪 Testing & CI
 
-**672 tests, with 100% statement, branch, function and line coverage** on every `core`, `worker` and `web/lib` source file (thresholds enforced in CI; pages and routes are covered by the e2e suite), plus property checks over
+**680 tests, with 100% statement, branch, function and line coverage** on every `core`, `worker` and `web/lib` source file (thresholds enforced in CI; pages and routes are covered by the e2e suite), plus property checks over
 **30,000 random windows** and **20,000 random fee schedules × 10 slots** (our formula equals the Meteora SDK's own scheduler at every point):
 
 | Suite | Count | Coverage | What it pins |
 |---|---|---|---|
-| core (vitest) | 168 | 100% | decoding real mainnet txs (incl. CPI-routed and v1), SNP10 window, Form stats, SDK toll quotes for every preset, launch builder, router client, properties |
-| worker (vitest) | 223 | 100% | crawl paging, indexer finalize paths, gRPC ≡ RPC decode on real fixtures, relay permission boundary, lander, RPC backoff, HTTP API, defect-named regressions |
+| core (vitest) | 171 | 100% | decoding real mainnet txs (incl. CPI-routed and v1), SNP10 window, Form stats, SDK toll quotes for every preset, launch builder, router client, properties |
+| worker (vitest) | 228 | 100% | crawl paging, indexer finalize paths, gRPC ≡ RPC decode on real fixtures, relay permission boundary, lander, RPC backoff, HTTP API, defect-named regressions |
 | web lib (vitest) | 254 | 100% | formatters, strip scaling, Form grouping, launch validation, DB queries (Postgres mocked) |
 | program (Rust) | 8 | — | I2 split exactness incl. a 100k-case sweep, DBC discriminators and PDAs |
 | program (localnet, real DBC binary) | 19 | — | invariants I1–I6, every negative path |
