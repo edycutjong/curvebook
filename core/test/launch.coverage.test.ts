@@ -15,11 +15,14 @@ vi.mock("@meteora-ag/dynamic-bonding-curve-sdk", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@meteora-ag/dynamic-bonding-curve-sdk")>();
   return {
     ...actual,
-    DynamicBondingCurveClient: vi.fn().mockImplementation(() => ({
-      state: { getPoolConfig: mocks.getPoolConfig },
-      pool: { getQuoteFromInputAmount: mocks.getQuoteFromInputAmount },
-      creator: { createPoolWithFirstBuy: mocks.createPoolWithFirstBuy },
-    })),
+    // vitest 4: a mock constructed with `new` needs a constructable implementation (not an arrow fn).
+    DynamicBondingCurveClient: vi.fn(function () {
+      return {
+        state: { getPoolConfig: mocks.getPoolConfig },
+        pool: { getQuoteFromInputAmount: mocks.getQuoteFromInputAmount },
+        creator: { createPoolWithFirstBuy: mocks.createPoolWithFirstBuy },
+      };
+    }),
   };
 });
 

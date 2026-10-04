@@ -13,11 +13,10 @@ export function startRpcLogs(ix: Indexer, rpc: Rpc, rpcUrl: string, wsUrl: strin
   const conn = new Connection(rpcUrl, { wsEndpoint: wsUrl, commitment: "confirmed" });
   const seen = new Set<string>();
   let lastMessage = Date.now();
-  let subId: number | null = null;
   let reconnects = 0;
 
-  const subscribe = () => {
-    subId = conn.onLogs(new PublicKey(DBC_PROGRAM_ID), (l, ctx) => {
+  const subscribe = () =>
+    conn.onLogs(new PublicKey(DBC_PROGRAM_ID), (l, ctx) => {
       lastMessage = Date.now();
       if (ctx.slot > ix.lastSlot) ix.lastSlot = ctx.slot;
       if (l.err || seen.has(l.signature)) return;
@@ -30,17 +29,16 @@ export function startRpcLogs(ix: Indexer, rpc: Rpc, rpcUrl: string, wsUrl: strin
         .then((tx) => (tx ? ix.onTx(tx) : undefined))
         .catch((e) => log(`fetch ${l.signature}: ${e?.message}`));
     }, "confirmed");
-  };
-  subscribe();
+  let subId = subscribe();
 
   // The public websocket goes quiet rather than closing; resubscribe when it does.
   setInterval(async () => {
     if (Date.now() - lastMessage < 30_000) return;
     reconnects++;
     log(`logs stream silent for 30 s, resubscribing (#${reconnects})`);
-    if (subId != null) await conn.removeOnLogsListener(subId).catch(() => {});
+    await conn.removeOnLogsListener(subId).catch(() => {});
     lastMessage = Date.now();
-    subscribe();
+    subId = subscribe();
   }, 10_000).unref();
 
   return { reconnects: () => reconnects, lastFromSlot: () => null as number | null };

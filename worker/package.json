@@ -17,8 +17,8 @@
     "solami": "0.1.56"
   },
   "devDependencies": {
-    "@vitest/coverage-v8": "^3.2.7",
+    "@vitest/coverage-v8": "^4.1.11",
     "tsx": "^4.19.0",
-    "vitest": "^3.2.0"
+    "vitest": "^4.1.11"
   }
 }

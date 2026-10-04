@@ -21,4 +21,9 @@ You'll get an acknowledgment within 48 hours and a resolution timeline after tri
 |---|---|---|
 | `bigint-buffer` ≤1.1.5 | `@solana/spl-token` → `buffer-layout-utils` | Used to encode fixed-size u64 fields we construct ourselves; no untrusted buffer of attacker-chosen length reaches `toBigIntLE` |
 | `braces` | wallet-adapter → `@solana-mobile` → `react-native` tooling | Build-time file globbing of the React Native toolchain; not executed in the web bundle or the worker |
-`postcss` and `toml` are pinned to patched versions through `pnpm.overrides`.
+| `extract-zip` ≤2.0.1 | Playwright / Lighthouse browser download (dev only) | Extracts archives from the browser vendor's CDN in CI, never user input |
+| `rand` 0.7.3 (Rust) | `solana-program` → `libsecp256k1` | The advisory needs a custom logger calling `rand::rng()`; neither exists in this program |
+
+`postcss`, `toml`, `uuid`, `stream-json`, `tmp`, `basic-ftp` and `serialize-javascript` are pinned to patched versions through
+`pnpm.overrides` (root and `program/`); vitest is on 4.1.11 (path-traversal fix). Verified after pinning: 653 unit tests at 100%
+coverage, 27 program tests, and the full-stack localnet launch.

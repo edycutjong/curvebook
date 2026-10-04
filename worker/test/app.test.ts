@@ -259,7 +259,7 @@ describe("startWorker(): rpc source (no solami token), no beam, fresh capture_st
   });
 
   it("falls back capture_start to the fresh chainSlot and logs 'worker up' with landing=rpc", () => {
-    const upLine = logSpy.mock.calls.map((c) => c.join(" ")).find((l) => l.includes("worker up:"));
+    const upLine = logSpy.mock.calls.map((c: any) => c.join(" ")).find((l: any) => l.includes("worker up:"));
     expect(upLine).toContain("source=rpc landing=rpc chainSlot=101 captureStart=101");
   });
 
@@ -319,7 +319,7 @@ describe("startWorker(): rpc source (no solami token), no beam, fresh capture_st
     });
     expect(res.status).toBe(500);
     expect(await res.json()).toEqual({ error: "internal error" });
-    expect(logSpy.mock.calls.some((c) => String(c[1] ?? "").startsWith("http: Error: boom"))).toBe(true);
+    expect(logSpy.mock.calls.some((c: any) => String(c[1] ?? "").startsWith("http: Error: boom"))).toBe(true);
   });
 
   it("POST /beam: falls back to the raw thrown value when it has no .stack (a rejected non-Error)", async () => {
@@ -330,27 +330,27 @@ describe("startWorker(): rpc source (no solami token), no beam, fresh capture_st
       body: JSON.stringify({ tx: "base64tx" }),
     });
     expect(res.status).toBe(500);
-    expect(logSpy.mock.calls.some((c) => String(c[1] ?? "") === "http: plain-string-error")).toBe(true);
+    expect(logSpy.mock.calls.some((c: any) => String(c[1] ?? "") === "http: plain-string-error")).toBe(true);
   });
 
   it("logs unhandled promise rejections (using .stack) without crashing the worker", () => {
     process.emit("unhandledRejection", new Error("stray"), Promise.resolve());
-    expect(logSpy.mock.calls.some((c) => String(c[1] ?? "").startsWith("unhandled: Error: stray"))).toBe(true);
+    expect(logSpy.mock.calls.some((c: any) => String(c[1] ?? "").startsWith("unhandled: Error: stray"))).toBe(true);
   });
 
   it("logs uncaught exceptions (using .stack) without crashing the worker", () => {
     process.emit("uncaughtException", new Error("fatal"));
-    expect(logSpy.mock.calls.some((c) => String(c[1] ?? "").startsWith("uncaught: Error: fatal"))).toBe(true);
+    expect(logSpy.mock.calls.some((c: any) => String(c[1] ?? "").startsWith("uncaught: Error: fatal"))).toBe(true);
   });
 
   it("logs an unhandled rejection whose reason has no .stack by falling back to the raw value", () => {
     process.emit("unhandledRejection", "stray-reason-no-stack", Promise.resolve());
-    expect(logSpy.mock.calls.some((c) => String(c[1] ?? "") === "unhandled: stray-reason-no-stack")).toBe(true);
+    expect(logSpy.mock.calls.some((c: any) => String(c[1] ?? "") === "unhandled: stray-reason-no-stack")).toBe(true);
   });
 
   it("logs an uncaught exception that has no .stack by falling back to the raw value", () => {
     process.emit("uncaughtException", "fatal-no-stack" as any);
-    expect(logSpy.mock.calls.some((c) => String(c[1] ?? "") === "uncaught: fatal-no-stack")).toBe(true);
+    expect(logSpy.mock.calls.some((c: any) => String(c[1] ?? "") === "uncaught: fatal-no-stack")).toBe(true);
   });
 
   it("POST /beam: success passes sql/rpc/indexer/beam/ownWallets (parsed from OWN_WALLETS at startup) and txBase64 to land()", async () => {
@@ -420,7 +420,7 @@ describe("startWorker(): rpc source (no solami token), no beam, fresh capture_st
     const aggTask = setIntervalFn.calls.find((c: any) => c.ms === 9_000);
     await aggTask!.cb();
     expect(deps.aggregate).toHaveBeenCalledWith(sql);
-    expect(logSpy.mock.calls.some((c) => String(c[1]).includes("agg: 7 windows, 2 configs, 1 ranked"))).toBe(true);
+    expect(logSpy.mock.calls.some((c: any) => String(c[1]).includes("agg: 7 windows, 2 configs, 1 ranked"))).toBe(true);
   });
 
   it("the health task writes lag/reconnects/stats to sql (lastSlot truthy -> numeric lag) and resets per-interval stats", async () => {
@@ -478,7 +478,7 @@ describe("startWorker(): grpc source (solami token set) with beam, and a reused 
   it("builds a beamer from solamiSwqosKey and logs landing=beam with the reused capture_start", () => {
     expect(deps.buildBeamer).toHaveBeenCalledWith("swqos-key");
     expect(started.beam).not.toBeNull();
-    const upLine = logSpy.mock.calls.map((c) => c.join(" ")).find((l) => l.includes("worker up:"));
+    const upLine = logSpy.mock.calls.map((c: any) => c.join(" ")).find((l: any) => l.includes("worker up:"));
     expect(upLine).toContain("source=grpc landing=beam chainSlot=51 captureStart=777");
   });
 

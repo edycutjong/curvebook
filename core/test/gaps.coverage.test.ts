@@ -9,6 +9,10 @@ describe("describeConfig: sub-SOL amounts", () => {
     expect(lines).toContain("Launching costs a 0.05 SOL pool creation fee.");
     expect(lines).toContain("Graduates at 0.5 SOL to DAMM v2.");
   });
+  it("omits the creator-fee sentence when the creator keeps 0% of trading fees", () => {
+    const lines = describeConfig({ ...configFixture("3yFxSqnZ"), creatorTradingFeePct: 0 });
+    expect(lines.some((l) => l.includes("The creator keeps"))).toBe(false);
+  });
   it("prints a whole-SOL amount without decimals", () => {
     expect(describeConfig({ ...configFixture("3yFxSqnZ"), migrationQuoteThreshold: 85_000_000_000n })).toContain("Graduates at 85 SOL to DAMM v2.");
   });
