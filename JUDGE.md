@@ -27,7 +27,7 @@ Committed facts:
 
 | | |
 |---|---|
-| Tests | 49 core · 17 worker · 29 web · 8 Rust + 19 localnet program tests · 23 e2e; property checks over 30,000 windows and 20,000 fee schedules |
+| Tests | 168 core · 223 worker · 254 web (100% line/branch coverage) · 8 Rust + 19 localnet program tests · 23 e2e; property checks over 30,000 windows and 20,000 fee schedules |
 | Proof | `pnpm proof`: windows re-derived offline, 20/20 sampled buys re-fetched from mainnet match |
 | Localnet rehearsal | slot+2 outside buy on Slow Cliff paid 3,381 bps vs creator 100 bps; same buys on Control paid 100 bps; partner fees decoded = SDK total (S8); creation fee split 70/30 on-chain |
 

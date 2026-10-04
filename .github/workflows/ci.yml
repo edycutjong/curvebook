@@ -31,8 +31,8 @@ jobs:
         run: pnpm --filter @curvebook/web lint
       - name: Typecheck (scripts, core, worker, web)
         run: pnpm typecheck
-      - name: Unit + property tests (core, worker, web)
-        run: pnpm test
+      - name: Unit + property tests with 100% coverage thresholds (core, worker, web/lib)
+        run: pnpm -r --if-present test:coverage
 
   program:
     name: "Stage 1 · Program (Rust unit tests)"
