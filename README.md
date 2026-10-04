@@ -6,6 +6,7 @@
 
   <br/>
 
+  [![Live app](https://img.shields.io/badge/▶_Live_app-curvebook.vercel.app-1E6B45?style=for-the-badge)](https://curvebook.vercel.app)
   [![Judges start here](https://img.shields.io/badge/⚖️_Judges-start_here-1C1B18?style=for-the-badge)](JUDGE.md)
   [![Receipts](https://img.shields.io/badge/🧾_Receipts-DEMO.md-C4122F?style=for-the-badge)](DEMO.md)
   [![Colosseum World's Fair](https://img.shields.io/badge/Colosseum-World's_Fair_2026-8b5cf6?style=for-the-badge)](https://colosseum.com/worldsfair)
