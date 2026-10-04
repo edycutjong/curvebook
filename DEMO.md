@@ -57,6 +57,8 @@ live config_stats vs recomputed (same launch count): identical
 20/20 match (sample seeded by snapshot sha256 a44401839a76065c…)
 ```
 
+In that snapshot: **73 launch windows, 45 with outside buys in slots 0–9, 7 where outside wallets took at least 10% of the curve** (recompute with `scripts/recompute.ts`; the per-window values are in the snapshot).
+
 The sample is chosen by the snapshot hash, so anyone re-running `scripts/verify_sample.ts` on the committed snapshot checks the same 20
 buys against mainnet: slot, payer (paired through the parent swap instruction) and base amount.
 
