@@ -6,6 +6,9 @@ import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { VersionedTransaction } from "@solana/web3.js";
 import { atoms, int, sol } from "@/lib/format";
 
+/** Generic metadata so a first-time tester can launch without hosting their own JSON. */
+const TESTER_METADATA = `${process.env.NEXT_PUBLIC_SITE_URL || "https://curvebook.edycu.dev"}/token/tester.json`;
+
 type Quote = { expectedOut: string; minimumOut: string; fee: string };
 type Step = "idle" | "building" | "signing" | "landing" | "landed";
 
@@ -79,12 +82,12 @@ export function LaunchForm({ slug, tokenDecimals }: { slug: string; tokenDecimal
         </div>
         <div className="field">
           <label htmlFor="uri">Metadata URI</label>
-          <input id="uri" name="uri" type="url" required maxLength={200} pattern="https://.*" placeholder="https://" inputMode="url" />
-          <span className="hint">The token&rsquo;s metadata JSON (name, symbol, image) at an https URL.</span>
+          <input id="uri" name="uri" type="url" required maxLength={200} pattern="https://.*" placeholder="https://" inputMode="url" defaultValue={TESTER_METADATA} />
+          <span className="hint">The token&rsquo;s metadata JSON (name, symbol, image) at an https URL. Pre-filled with a generic test-token file; replace it with your own.</span>
         </div>
         <div className="field">
           <label htmlFor="buySol">First buy (SOL)</label>
-          <input id="buySol" name="buySol" type="number" required min="0.000000001" max="5" step="any" defaultValue="0.1" inputMode="decimal" />
+          <input id="buySol" name="buySol" type="number" required min="0.000000001" max="5" step="any" defaultValue="0.01" inputMode="decimal" />
           <span className="hint">Bundled into the launch transaction, so it lands in slot 0.</span>
         </div>
         <button className="btn primary" type="submit" disabled={busy || !publicKey}>
