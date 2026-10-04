@@ -16,3 +16,4 @@ web/blob-report/
 .lighthouseci/
 web/.lighthouseci/
 web/.next-e2e/
+.vercel/
