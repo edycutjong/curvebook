@@ -9,7 +9,9 @@ export const metadata: Metadata = { title: "Verify" };
 
 export default async function VerifyPage() {
   const [events, { health, pools, windows }, presets, launches] = await Promise.all([getEvents(50), getHealth(), getPresets(), getLaunches(50)]);
-  const routerOnMainnet = process.env.NEXT_PUBLIC_ROUTER_NETWORK === "mainnet-beta";
+  const routerNetwork = process.env.NEXT_PUBLIC_ROUTER_NETWORK ?? "localnet";
+  const routerOnMainnet = routerNetwork === "mainnet-beta";
+  const routerLink = routerNetwork === "localnet" ? null : solscanAccount(ROUTER_PROGRAM_ID) + (routerOnMainnet ? "" : `?cluster=${routerNetwork}`);
 
   return (
     <>
@@ -52,10 +54,10 @@ export default async function VerifyPage() {
       <section aria-labelledby="router-h">
         <div className="section-head">
           <h2 id="router-h">Router program</h2>
-          <p>{routerOnMainnet ? "deployed on mainnet-beta" : "localnet-tested; mainnet deploy pending"}</p>
+          <p>{routerOnMainnet ? "deployed on mainnet-beta" : routerNetwork === "devnet" ? "deployed on devnet (claim + split path on the explorer); mainnet pending" : "localnet-tested; mainnet deploy pending"}</p>
         </div>
         <p className="mono" style={{ marginTop: 12, overflowWrap: "anywhere" }}>
-          {routerOnMainnet ? <a href={solscanAccount(ROUTER_PROGRAM_ID)} target="_blank" rel="noreferrer">{ROUTER_PROGRAM_ID}</a> : ROUTER_PROGRAM_ID}
+          {routerLink ? <a href={routerLink} target="_blank" rel="noreferrer">{ROUTER_PROGRAM_ID}</a> : ROUTER_PROGRAM_ID}
         </p>
       </section>
 
