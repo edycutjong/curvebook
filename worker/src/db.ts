@@ -60,3 +60,18 @@ export async function writeWindow(sql: Sql, w: PoolWindow, complete: boolean, so
         finalized_at = now()`;
   });
 }
+
+/** Key of the Postgres advisory lock that makes one worker the only writer of an index. */
+export const INDEX_LOCK_KEY = 0x63757276; // "curv"
+
+/**
+ * Take the index lock on a dedicated connection for the life of the process. Two workers on one
+ * database would finalize every window twice (2026-10-04: an orphaned smoke-test worker doubled
+ * the health counters and the event feed), so a second worker must refuse to start.
+ */
+export async function acquireIndexLock(sql: Sql): Promise<boolean> {
+  const conn = await sql.reserve();
+  const [row] = await conn`select pg_try_advisory_lock(${INDEX_LOCK_KEY}) as locked`;
+  if (!row?.locked) conn.release();
+  return Boolean(row?.locked);
+}

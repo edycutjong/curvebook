@@ -389,3 +389,26 @@ describe("db.ts", () => {
     });
   });
 });
+
+describe("acquireIndexLock — one writer per index", () => {
+  it("holds a dedicated connection when the lock is free", async () => {
+    const release = vi.fn();
+    const conn: any = Object.assign(async () => [{ locked: true }], { release });
+    const sqlFake: any = { reserve: async () => conn };
+    const { acquireIndexLock } = await import("../src/db.js");
+    expect(await acquireIndexLock(sqlFake)).toBe(true);
+    expect(release).not.toHaveBeenCalled();
+  });
+  it("second_worker_on_the_same_database_refuses_and_returns_its_connection", async () => {
+    const release = vi.fn();
+    const conn: any = Object.assign(async () => [{ locked: false }], { release });
+    const { acquireIndexLock } = await import("../src/db.js");
+    expect(await acquireIndexLock({ reserve: async () => conn } as any)).toBe(false);
+    expect(release).toHaveBeenCalledOnce();
+  });
+  it("treats an empty lock reply as not acquired", async () => {
+    const conn: any = Object.assign(async () => [], { release: vi.fn() });
+    const { acquireIndexLock } = await import("../src/db.js");
+    expect(await acquireIndexLock({ reserve: async () => conn } as any)).toBe(false);
+  });
+});

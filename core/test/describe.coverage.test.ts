@@ -218,11 +218,9 @@ describe("describe.ts coverage: missing branches", () => {
   });
 
   // Test tiny SOL amount that rounds to 0
-  it("handles very small SOL amounts", () => {
+  it("prints sub-0.001 SOL amounts in lamports instead of rounding them to 0 SOL", () => {
     const c = { ...sched(0, 500_000_000n, 10, 2n, 40_000_000n), migrationQuoteThreshold: 100n };
-    const desc = describeConfig(c);
-    // 0 SOL (100 atoms = 0.0000001 SOL, toFixed(3) = "0.000" -> trim -> "0")
-    expect(desc.some((line) => line.includes("0 SOL"))).toBe(true);
+    expect(describeConfig(c)).toContain("Graduates at 100 lamports to DAMM v2.");
   });
 
   // Test trim function: all paths of replace operations

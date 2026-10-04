@@ -12,6 +12,13 @@ describe("describeConfig: sub-SOL amounts", () => {
   it("prints a whole-SOL amount without decimals", () => {
     expect(describeConfig({ ...configFixture("3yFxSqnZ"), migrationQuoteThreshold: 85_000_000_000n })).toContain("Graduates at 85 SOL to DAMM v2.");
   });
+  it("graduation_threshold_below_0.001_SOL_prints_lamports_instead_of_0_SOL", () => {
+    // Real mainnet config BeieowyJ… graduates at 10,000 lamports; it used to read "Graduates at 0 SOL".
+    expect(describeConfig({ ...configFixture("3yFxSqnZ"), migrationQuoteThreshold: 10_000n })).toContain("Graduates at 10,000 lamports to DAMM v2.");
+  });
+  it("a zero amount still reads 0 SOL", () => {
+    expect(describeConfig({ ...configFixture("3yFxSqnZ"), migrationQuoteThreshold: 0n })).toContain("Graduates at 0 SOL to DAMM v2.");
+  });
   it("drops a dangling decimal point when two decimals round to a whole number", () => {
     expect(describeConfig({ ...configFixture("3yFxSqnZ"), migrationQuoteThreshold: 2_001_000_000n })).toContain("Graduates at 2 SOL to DAMM v2.");
   });

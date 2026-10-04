@@ -7,8 +7,11 @@ const pct = (numerator: bigint): string => {
   return `${p >= 10 ? p.toFixed(0) : p >= 1 ? p.toFixed(1) : p.toFixed(2)}%`;
 };
 
+// Below 0.001 SOL the 3-decimal format would print "0 SOL" (seen on a mainnet config with a 10,000-lamport threshold).
 const quoteAmount = (atoms: bigint, quoteMint: string): string =>
-  quoteMint === WSOL_MINT ? `${trim(Number(atoms) / 1e9)} SOL` : `${atoms.toString()} quote atoms`;
+  quoteMint !== WSOL_MINT ? `${atoms.toString()} quote atoms`
+    : atoms > 0n && atoms < 1_000_000n ? `${atoms.toLocaleString("en-US")} lamports`
+    : `${trim(Number(atoms) / 1e9)} SOL`;
 
 const trim = (n: number) => (Number.isInteger(n) ? n.toString() : n.toFixed(n < 1 ? 3 : 2).replace(/0+$/, "").replace(/\.$/, ""));
 
