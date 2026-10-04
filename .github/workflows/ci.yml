@@ -22,9 +22,9 @@ jobs:
       matrix:
         node-version: ${{ github.event_name == 'push' && fromJSON('[22, 24]') || fromJSON('[22]') }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
         with: { node-version: "${{ matrix.node-version }}", cache: pnpm }
       - run: pnpm install --frozen-lockfile
       - name: Lint
@@ -38,7 +38,7 @@ jobs:
     name: "Stage 1 · Program (Rust unit tests)"
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with: { workspaces: program }
@@ -50,9 +50,9 @@ jobs:
     name: "Stage 2 · Dependency audit"
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
         with: { node-version: 22, cache: pnpm }
       - run: pnpm install --frozen-lockfile
       - run: pnpm audit --prod --audit-level=high
@@ -64,9 +64,9 @@ jobs:
     needs: [quality]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
         with: { node-version: 22, cache: pnpm }
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @curvebook/web build
@@ -92,9 +92,9 @@ jobs:
     env:
       DATABASE_URL: postgres://curvebook:curvebook@localhost:5433/curvebook
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
         with: { node-version: 22, cache: pnpm }
       - run: pnpm install --frozen-lockfile
       - name: Load the committed mainnet snapshot (CI replay — the product reads the live index)
@@ -103,7 +103,7 @@ jobs:
       - run: pnpm --filter @curvebook/web build
       - run: pnpm --filter @curvebook/web e2e
       - if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with: { name: playwright-report, path: web/playwright-report/, retention-days: 7 }
 
   # ── Stage 5 · Performance & accessibility ──────────────────
@@ -120,9 +120,9 @@ jobs:
     env:
       DATABASE_URL: postgres://curvebook:curvebook@localhost:5433/curvebook
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
         with: { node-version: 22, cache: pnpm }
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec tsx scripts/load-snapshot.ts
