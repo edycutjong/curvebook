@@ -20,7 +20,7 @@ First ~30 minutes of capture, slots 453,070,248 → 453,074,746 (4,498 slots):
 | Windows finalized from confirmed signatures | 75 complete · 0 incomplete |
 | Windows where outside wallets bought in slots 0–9 | 46 of 75 |
 | Mean SNP10 | 8.0% of the curve's sellable supply |
-| Worst window | **90.7%**: pool [`BZRdad…W2Gf`](https://solscan.io/account/BZRdadeK8G3ScYeoPCKReXPNgrxQ48qPysK3jSPmW2Gf), [create tx](https://solscan.io/tx/5geVVHpQ79bTT2e1FVN2X9t6jggfG1nPagVNjSFPcPa1M7KZ3Lr2Fzcs8Wi2BjeShb3ScBfunfKxMnDHspjzs5YH). One wallet bought it in slot 0 for 9.208 SOL ([tx](https://solscan.io/tx/2xwpzmLa2fPScTxXoAetw6sw5XKRfYchrLbJvQkvnC19Y5toWm9GhvHgxNrWL35zJEj2zeV1EKfuhr9gQUiDSbCt)). A second pool on the same config, [`HUjBHy…Vjen`](https://solscan.io/account/HUjBHy2J5KcMuBsPdMX4LZvP2s7NbDR5sshZYF1cjVen), shows the same 90.7%. Their config's readout: "Flat 0.25% fee from the first slot. No anti-sniper schedule." |
+| Worst window | **90.7%**: pool [`BZRdad…W2Gf`] (created in slot 453,073,301)(https://solscan.io/account/BZRdadeK8G3ScYeoPCKReXPNgrxQ48qPysK3jSPmW2Gf), [create tx](https://solscan.io/tx/5geVVHpQ79bTT2e1FVN2X9t6jggfG1nPagVNjSFPcPa1M7KZ3Lr2Fzcs8Wi2BjeShb3ScBfunfKxMnDHspjzs5YH). One wallet bought it in slot 0 for 9.208 SOL ([tx](https://solscan.io/tx/2xwpzmLa2fPScTxXoAetw6sw5XKRfYchrLbJvQkvnC19Y5toWm9GhvHgxNrWL35zJEj2zeV1EKfuhr9gQUiDSbCt)). A second pool on the same config, [`HUjBHy…Vjen`](https://solscan.io/account/HUjBHy2J5KcMuBsPdMX4LZvP2s7NbDR5sshZYF1cjVen), shows the same 90.7%. Their config's readout: "Flat 0.25% fee from the first slot. No anti-sniper schedule." |
 | RPC retries | 1, absorbed (two keyless endpoints with per-endpoint backoff) |
 
 Every buy in that window (from the committed snapshot; share = base bought ÷ the config's `swap_base_amount`):
@@ -53,7 +53,25 @@ most-used config 3mDSxat7hMmhQ41wQEyJJdufhN7j2Kd6oeNWEn8jfZF2: 9 launches, SNP10
 live config_stats vs recomputed (same launch count): identical
 ✓ 5PdiqvAJKPuenGKH3CnN…  slot 453074360 (+7)  payer 9uxArNWi…  outside
 ✓ xfnWhhjvSkyUKun7e4YS…  slot 453074353 (+0)  payer 29hDcch4…  outside
-… (20 rows)
+✓ 2vtcHo4NRZ2ASbhugm1n…  slot 453073858 (+0)  payer 61VFto2W…  outside
+✓ vHv66ovaxCUGgJLqKrYm…  slot 453074617 (+2)  payer GtwFoH8C…  outside
+✓ 5CWCB9833jnPf87dNMVf…  slot 453072509 (+3)  payer ANz4PP7R…  outside
+✓ 4fn2xno2Gd6LhnwfdxAe…  slot 453072451 (+5)  payer 9uxArNWi…  outside
+✓ 5kdk3tvPiH4PU4wVeYB8…  slot 453071882 (+3)  payer BotVz5i1…  outside
+✓ 3ZZRNQvozgT4GGSdGqeM…  slot 453072510 (+4)  payer 634KVScq…  outside
+✓ 2qwdUxHPhQB1Gend3bf1…  slot 453073978 (+2)  payer HsEZ3hvk…  outside
+✓ WCTDTBHgfiSSqC3CLX29…  slot 453072659 (+6)  payer 2GwUHPy8…  outside
+✓ t85dAy6pVD5MAkdQeCki…  slot 453071052 (+2)  payer 9HWkQCx7…  outside
+✓ 5WzzjEfWHEEQBrMzXPBU…  slot 453073157 (+5)  payer BotVz5i1…  outside
+✓ 57gYB9jc6HqPN2hPWzsx…  slot 453072656 (+3)  payer 23vyrUNC…  outside
+✓ XjpykuzBvdzJMJmGinxV…  slot 453071410 (+3)  payer BFNonoEf…  outside
+✓ 2xwpzmLa2fPScTxXoAet…  slot 453073301 (+0)  payer 61VFto2W…  outside
+✓ 2viRMyiLAThLHfDXjTBj…  slot 453073551 (+0)  payer EhHcrM3q…  creator
+✓ D6YyEngTQWUP3sNiLPjd…  slot 453072450 (+4)  payer BsCFZbKV…  outside
+✓ 4FPzQEhRu7HT2mfkvuxD…  slot 453073200 (+7)  payer BsCFZbKV…  outside
+✓ WFY6ZMTUBE2vybWa7HQ6…  slot 453073077 (+4)  payer BotVz5i1…  outside
+✓ 2Z3fXzdAohQZVQ9RC5sB…  slot 453074360 (+7)  payer 8TLbwpWy…  outside
+
 20/20 match (sample seeded by snapshot sha256 a44401839a76065c…)
 ```
 

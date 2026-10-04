@@ -1,0 +1,590 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Curvebook — ten slots after launch, the curve confesses</title>
+<meta name="description" content="Curvebook decodes the first ten slots of every Meteora DBC launch live from Solana mainnet and ranks bonding curves by how much outside wallets buy before slot 10.">
+<meta property="og:title" content="Curvebook — ten slots after launch, the curve confesses">
+<meta property="og:description" content="A Meteora DBC launch lost 90.7% of its curve to one wallet in slot 0. Curvebook ranks DBC curves by that record, live from mainnet.">
+<meta property="og:image" content="img/og.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="img/og.png">
+<meta name="theme-color" content="#F3EFE4">
+<link rel="icon" href="img/icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800;900&family=IBM+Plex+Mono:wght@500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400;1,8..60,600&display=swap" rel="stylesheet">
+<style>
+/* Tokens: specs/design.md §4, verbatim. */
+:root {
+  --bg:      #F3EFE4;
+  --ink:     #1C1B18;
+  --muted:   #6F6A5C;
+  --before:  #C4122F;
+  --after:   #1E6B45;
+  --rule:    #D5CEBB;
+  --paper-2: #EAE4D4;
+  --font-display: "Big Shoulders Display", "Oswald", "Arial Narrow", sans-serif;
+  --font-body:    "Source Serif 4", "Georgia", serif;
+  --font-data:    "IBM Plex Mono", "SFMono-Regular", monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{overflow-x:clip;scroll-behavior:smooth;scrollbar-color:var(--ink) var(--paper-2)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:19px;line-height:1.55;
+  background-image:repeating-linear-gradient(0deg,transparent 0 31px,rgba(213,206,187,.42) 31px 32px);-webkit-font-smoothing:antialiased}
+::selection{background:var(--ink);color:var(--bg)}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+img{max-width:100%;height:auto;display:block}
+.wrap{max-width:1240px;margin:0 auto;padding:0 32px}
+/* grid children must be allowed to shrink below their longest unbreakable line (the run command) */
+.hero .wrap>*,.pair>*,.form-grid>*,.reel>*,.sh>*,.duel>*,.quotes>*,.band .wrap>*{min-width:0}
+.label{font:600 13px/1.3 var(--font-data);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.mono{font-family:var(--font-data);font-variant-numeric:tabular-nums}
+.disp{font-family:var(--font-display);font-weight:900;text-transform:uppercase;line-height:.88;letter-spacing:-.005em}
+.red{color:var(--before)}
+.skip{position:absolute;left:-9999px;top:8px;background:var(--ink);color:var(--bg);padding:8px 12px;z-index:9}
+.skip:focus{left:8px}
+
+/* nav */
+header.top{position:sticky;top:0;z-index:5;background:rgba(243,239,228,.94);backdrop-filter:blur(6px);border-bottom:6px double var(--ink)}
+.top .wrap{display:flex;align-items:center;justify-content:space-between;height:68px;gap:20px}
+.logo{display:flex;align-items:center;gap:10px;font:900 28px var(--font-display);text-decoration:none;letter-spacing:.01em}
+.logo img{width:30px;height:30px}
+.logo b{background:var(--ink);color:var(--bg);padding:0 .08em;font-weight:900}
+.top nav{display:flex;gap:24px;align-items:center}
+.top nav a{font:800 15px var(--font-display);letter-spacing:.09em;text-transform:uppercase;text-decoration:none;padding:6px 0;border-bottom:2px solid transparent;transition:border-color .15s}
+.top nav a:hover{border-color:var(--before)}
+.top nav a.gh{border:2px solid var(--ink);padding:6px 12px;background:var(--ink);color:var(--bg)}
+.top nav a.gh:hover{background:var(--before);border-color:var(--before)}
+
+/* hero */
+.hero{padding:72px 0 56px;position:relative;overflow-x:clip}
+.hero .wrap{display:grid;grid-template-columns:1.2fr .8fr;gap:56px;align-items:center}
+.hero-bg{position:absolute;inset:0;pointer-events:none;overflow:hidden;opacity:.5}
+.hero-bg svg{position:absolute;right:-6%;top:6%;width:62%;height:auto}
+h1{font:900 clamp(56px,7vw,104px)/.86 var(--font-display);text-transform:uppercase;letter-spacing:-.01em;margin:20px 0 28px}
+h1 .l{display:block}
+h1 em{display:block;font:italic 600 .76em/1.02 var(--font-body);text-transform:none;color:var(--before);letter-spacing:-.025em;position:relative;width:max-content;max-width:100%;margin-top:.06em}
+h1 em svg{position:absolute;left:-1%;bottom:-.14em;width:103%;height:.3em;overflow:visible}
+h1 em svg path{stroke:var(--before);stroke-width:5;fill:none;stroke-linecap:round;stroke-dasharray:900;stroke-dashoffset:0;animation:scratch 1s .9s cubic-bezier(.6,0,.2,1) backwards}
+@keyframes scratch{from{stroke-dashoffset:900}}
+.sub{font-size:21px;line-height:1.55;max-width:56ch;margin:0}
+.sub b{font-weight:600;background:linear-gradient(transparent 60%,rgba(196,18,47,.17) 0)}
+.cta{display:flex;gap:12px;margin-top:32px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:10px;font:800 17px var(--font-display);letter-spacing:.09em;text-transform:uppercase;padding:14px 22px;border:2px solid var(--ink);text-decoration:none;background:var(--bg);transition:transform .12s,box-shadow .12s,background .15s,color .15s}
+.btn:hover{transform:translate(-2px,-2px);box-shadow:4px 4px 0 var(--ink)}
+.btn:active{transform:none;box-shadow:none}
+.btn.p{background:var(--ink);color:var(--bg)}
+.btn.p:hover{background:var(--before);border-color:var(--before);box-shadow:4px 4px 0 var(--ink)}
+.btn svg{width:18px;height:18px}
+.run{margin-top:22px;display:flex;align-items:center;gap:0;max-width:640px;border:1.5px solid var(--ink);background:var(--paper-2)}
+.run code{flex:1;font:500 14px var(--font-data);padding:11px 14px;white-space:nowrap;overflow-x:auto}
+.run button{font:800 14px var(--font-display);letter-spacing:.1em;text-transform:uppercase;border:0;border-left:1.5px solid var(--ink);background:var(--bg);padding:0 16px;align-self:stretch;cursor:pointer;color:var(--ink)}
+.run button:hover{background:var(--ink);color:var(--bg)}
+.proof{margin-top:14px;font:500 13px var(--font-data);color:var(--muted)}
+.proof i{font-style:normal;color:var(--after)}
+
+/* past-performance card */
+.pp{position:relative;border:2px solid var(--ink);background:var(--bg);box-shadow:10px 10px 0 var(--ink);padding:24px 26px 20px;transform:rotate(.7deg)}
+.pp .head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;border-bottom:1.5px solid var(--ink);padding-bottom:10px}
+.pp h2{font:900 30px/1 var(--font-display);white-space:nowrap;text-transform:uppercase;margin:0}
+.pp .slot{font:600 12px var(--font-data);color:var(--muted);text-align:right}
+.strip{display:grid;grid-template-columns:repeat(10,1fr);gap:7px;margin:18px 0 6px}
+.cell{aspect-ratio:1;border:2.5px solid var(--ink);position:relative;overflow:hidden;background:var(--bg)}
+.cell i{position:absolute;left:0;right:0;bottom:0;background:var(--before);transform-origin:bottom;animation:fill .38s cubic-bezier(.3,0,.2,1) backwards}
+.cell svg{position:absolute;inset:14%;width:72%;height:72%;animation:tick .3s ease backwards}
+@keyframes fill{from{transform:scaleY(0)}}
+@keyframes tick{from{opacity:0;transform:scale(.4)}}
+.idx{display:grid;grid-template-columns:repeat(10,1fr);gap:7px;font:500 11px var(--font-data);color:var(--muted);text-align:center}
+.pp .big{font:900 104px/.86 var(--font-display);color:var(--before);margin-top:16px}
+.pp .read{font:italic 18px/1.4 var(--font-body);margin:4px 0 0}
+.buys{margin-top:16px;font:500 14px var(--font-data)}
+.buys .row{display:grid;grid-template-columns:3em 1fr auto 5em;gap:8px;padding:7px 4px;border-top:1px solid var(--rule)}
+.buys .row span:nth-child(3),.buys .row span:nth-child(4){text-align:right}
+.stamp{text-transform:uppercase;position:absolute;right:-22px;top:-30px;border:4px solid var(--before);color:var(--before);font:900 21px var(--font-display);letter-spacing:.06em;padding:7px 12px 5px;background:rgba(243,239,228,.94);transform:rotate(-7deg);animation:slam .32s 1.4s cubic-bezier(.2,1.6,.5,1) backwards}
+@keyframes slam{from{opacity:0;transform:rotate(-12deg) scale(2.4)}}
+.pp .src{margin-top:12px;font:500 12px var(--font-data);color:var(--muted)}
+.pp .src a{color:var(--muted)}
+
+/* receipts band */
+.band{border-block:6px double var(--ink);background:var(--paper-2)}
+.band .wrap{display:grid;grid-template-columns:repeat(4,1fr)}
+.rc{padding:30px 26px 26px;border-left:1.5px solid var(--rule)}
+.rc:first-child{border-left:0;padding-left:0}
+.rc .n{font:900 76px/.9 var(--font-display);letter-spacing:-.01em}
+.rc .n small{font-size:.5em;color:#625d4f}
+.rc p{margin:10px 0 8px;font-size:17px;line-height:1.35}
+.rc .pf{font:500 12px var(--font-data);color:#59544a}
+
+/* sections */
+section.s{padding:104px 0 32px}
+.sh{display:grid;grid-template-columns:7fr 5fr;gap:48px;align-items:end;margin-bottom:44px}
+.sh h2{font:900 clamp(44px,5vw,76px)/.92 var(--font-display);text-transform:uppercase;margin:12px 0 0;letter-spacing:-.005em}
+.sh h2 em{white-space:nowrap;font:italic 600 .84em var(--font-body);text-transform:none;color:var(--before);letter-spacing:-.02em}
+.sh p{margin:0;max-width:52ch;font-size:18.5px}
+
+/* demo pair */
+.pair{display:grid;grid-template-columns:1.18fr .82fr;gap:28px;align-items:start}
+.frame{border:2px solid var(--ink);background:var(--bg);box-shadow:8px 8px 0 var(--ink)}
+.frame .bar{display:flex;align-items:center;gap:8px;padding:9px 12px;border-bottom:2px solid var(--ink);background:var(--paper-2);font:500 12px var(--font-data);color:var(--muted)}
+.frame .bar span{width:11px;height:11px;border:1.5px solid var(--ink);border-radius:50%}
+.frame .bar code{margin-left:8px;flex:1;background:var(--bg);border:1px solid var(--rule);padding:3px 10px;color:var(--ink)}
+.frame figcaption{padding:10px 14px;border-top:1.5px solid var(--rule);font:italic 16px var(--font-body)}
+.term{background:var(--ink);color:#EDE8DC;border:2px solid var(--ink);box-shadow:8px 8px 0 var(--before);font:500 13.5px/1.62 var(--font-data);position:sticky;top:96px}
+.term .bar{display:flex;justify-content:space-between;padding:9px 14px;border-bottom:1px solid #3a3832;color:#a7a191;font-size:12px}
+.term pre{margin:0;padding:16px 16px 20px;white-space:pre-wrap;word-break:break-word;min-height:24.5em}
+.term .ok{color:#7fc39a}.term .rd{color:#ff6b7f}.term .dim{color:#9c9686}.term .cmd{color:#fff}
+.term .caret{display:inline-block;width:.6em;height:1.05em;background:#EDE8DC;vertical-align:-2px;animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+
+/* wall */
+.wall-box{border:2px solid var(--ink);background:var(--bg);padding:26px 26px 18px;position:relative}
+.wall{display:grid;grid-template-columns:repeat(6,1fr);gap:12px 22px;list-style:none;padding:0;margin:0}
+.mini{display:grid;grid-template-columns:repeat(10,1fr);gap:3px;padding:5px;border:1.5px solid transparent;text-decoration:none;position:relative;transition:transform .12s}
+.mini b{aspect-ratio:1;border:1.5px solid var(--ink);position:relative;overflow:hidden;background:var(--bg)}
+.mini b i{position:absolute;left:0;right:0;bottom:0;background:var(--before)}
+.mini.worst{border-color:var(--before);border-radius:50%/60%;outline:none}
+.mini:hover,.mini:focus-visible{transform:scale(1.06);border-color:var(--ink);z-index:2}
+.mini.dim{opacity:.32}
+.wall-legend{display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px;margin-top:20px;padding-top:14px;border-top:1.5px solid var(--rule);font:500 13px var(--font-data);color:var(--muted)}
+.wall-legend button{font:800 14px var(--font-display);letter-spacing:.08em;text-transform:uppercase;background:var(--bg);border:2px solid var(--ink);padding:6px 12px;cursor:pointer;color:var(--ink)}
+.wall-legend button[aria-pressed="true"]{background:var(--before);border-color:var(--before);color:var(--bg)}
+.tip{position:absolute;pointer-events:none;background:var(--ink);color:var(--bg);font:500 12px/1.45 var(--font-data);padding:8px 10px;white-space:nowrap;opacity:0;transform:translateY(4px);transition:opacity .12s,transform .12s;z-index:4}
+.tip.on{opacity:1;transform:none}
+.tip b{color:#ff8a98;font-weight:600}
+.facts{display:grid;grid-template-columns:repeat(3,1fr);gap:0;margin-top:26px;border:2px solid var(--ink)}
+.facts div{padding:20px 22px;border-left:1.5px solid var(--rule)}
+.facts div:first-child{border-left:0}
+.facts .n{font:900 60px/.9 var(--font-display)}
+.facts p{margin:8px 0 0;font-size:16px;line-height:1.35}
+
+/* the form */
+.form-grid{display:grid;grid-template-columns:1.25fr .75fr;gap:40px;align-items:start}
+.stack{position:relative}
+.stack{margin-bottom:120px}.stack .frame + .frame{position:absolute;width:58%;right:-3%;bottom:-120px;transform:rotate(-1.4deg)}
+.rules{list-style:none;padding:0;margin:0;counter-reset:r}
+.rules li{counter-increment:r;padding:18px 0 18px 58px;border-top:1.5px solid var(--rule);position:relative;font-size:18px;line-height:1.45}
+.rules li::before{content:counter(r,decimal-leading-zero);position:absolute;left:0;top:14px;font:900 36px var(--font-display);color:var(--before)}
+.rules li b{font-weight:600}
+
+/* bento */
+.bento{display:grid;grid-template-columns:repeat(6,1fr);gap:20px}
+.card{border:2px solid var(--ink);background:var(--bg);padding:26px 26px 22px;display:flex;flex-direction:column;gap:12px;transition:transform .14s,box-shadow .14s}
+.card:hover{transform:translate(-3px,-3px);box-shadow:6px 6px 0 var(--ink)}
+.card svg{width:52px;height:52px}
+.card h3{font:900 32px/.95 var(--font-display);text-transform:uppercase;margin:0}
+.card p{margin:0;font-size:17.5px;line-height:1.45;flex:1}
+.chip{align-self:flex-start;font:600 12px var(--font-data);border:1.5px solid var(--ink);padding:4px 9px;background:var(--paper-2)}
+.c1{grid-column:span 4}.c2{grid-column:span 2}.c3{grid-column:span 2}.c4{grid-column:span 2}.c5{grid-column:span 2}
+.c1{background:var(--ink);color:var(--bg)}.c1 .chip{background:transparent;border-color:var(--bg);color:var(--bg)}
+.c1 p{font-size:20px;max-width:46ch}
+
+/* two curves */
+.duel{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.lane{border:2px solid var(--ink);padding:24px 26px;background:var(--bg)}
+.lane h3{font:900 34px var(--font-display);text-transform:uppercase;margin:0 0 4px}
+.lane .meta{font:500 13px var(--font-data);color:var(--muted)}
+.lane .fee{font:900 112px/.86 var(--font-display);margin:22px 0 6px}
+.lane .fee .u{font-size:.36em;letter-spacing:.04em}
+.meter{height:24px;border:2px solid var(--ink);position:relative;background:var(--paper-2)}
+.meter i{position:absolute;left:0;top:0;bottom:0;background:var(--before);transition:width 1.1s cubic-bezier(.3,0,.2,1)}
+.lane.flat .meter i{background:var(--ink)}
+.lane p{margin:14px 0 0;font-size:17px}
+.rx{margin-top:34px}
+.rx h3{font:900 30px var(--font-display);text-transform:uppercase;margin:0 0 14px;display:flex;justify-content:space-between;align-items:baseline;gap:16px;flex-wrap:wrap}
+.rx h3 span{font:500 13px var(--font-data);text-transform:none;color:var(--muted)}
+.tix{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(4,1fr)}
+.tix li{position:relative;display:flex;flex-direction:column;gap:8px;padding:18px 22px 16px;border:2px solid var(--ink);margin-left:-2px;background:var(--bg);transition:transform .14s}
+.tix li::before,.tix li::after{content:"";position:absolute;top:50%;width:16px;height:16px;margin-top:-8px;border-radius:50%;background:var(--bg);border:2px solid var(--ink)}
+.tix li::before{left:-9px;clip-path:inset(0 0 0 50%)}.tix li::after{right:-9px;clip-path:inset(0 50% 0 0)}
+.tix li:first-child::before,.tix li:last-child::after{display:none}
+.tix li:hover{transform:translateY(-4px)}
+.tix .no{font:900 40px/1 var(--font-display);color:var(--before)}
+.tix .what{font:800 19px/1.1 var(--font-display);text-transform:uppercase;letter-spacing:.03em}
+.tix .res{font-size:16px;line-height:1.35;flex:1}.tix .res b{font-weight:600}
+.tix .sig{font:500 13px var(--font-data);border-top:1.5px dashed var(--rule);padding-top:10px}
+
+/* video */
+.reel{display:grid;grid-template-columns:.9fr 1.1fr;gap:40px;align-items:center}
+.reel video{width:100%;border:2px solid var(--ink);box-shadow:8px 8px 0 var(--ink);background:var(--bg);aspect-ratio:16/9}
+
+/* honest */
+.quotes{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+blockquote{margin:0;border-top:6px double var(--ink);padding:22px 4px 0}
+blockquote p{font:italic 21px/1.45 var(--font-body);margin:0}
+blockquote p::before{content:"“";font:900 64px/0 var(--font-display);color:var(--before);vertical-align:-.36em;margin-right:4px}
+blockquote cite{display:block;margin-top:14px;font:600 12px var(--font-data);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-style:normal}
+
+/* faq */
+.faq{border-top:2px solid var(--ink)}
+.faq details{border-bottom:1.5px solid var(--rule)}
+.faq summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;gap:20px;padding:22px 0;font:800 26px/1.1 var(--font-display);text-transform:uppercase}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"+";font:900 34px/0.8 var(--font-display);color:var(--before);transition:transform .2s}
+.faq details[open] summary::after{transform:rotate(45deg)}
+.faq summary:hover{color:var(--before)}
+.faq details p{margin:0 0 24px;max-width:70ch;font-size:18.5px}
+
+footer{margin-top:110px;border-top:6px double var(--ink);padding:36px 0 48px}
+footer .wrap{display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;align-items:center}
+footer nav{display:flex;gap:22px;flex-wrap:wrap}
+footer a{font:800 15px var(--font-display);letter-spacing:.09em;text-transform:uppercase;text-decoration:none}
+footer a:hover{color:var(--before)}
+footer small{font:500 12px var(--font-data);color:var(--muted)}
+
+/* reveal: content is visible by default; JS adds .pre only to below-the-fold blocks and removes it on view */
+.js .pre{opacity:0;transform:translateY(18px)}
+.reveal{transition:opacity .6s ease,transform .6s cubic-bezier(.2,.7,.2,1)}
+
+@media (max-width:980px){
+  .hero .wrap,.pair,.form-grid,.reel,.sh{grid-template-columns:1fr}
+  .pp{transform:none;max-width:560px}
+  .band .wrap{grid-template-columns:1fr 1fr}
+  .rc:nth-child(3){border-left:0;padding-left:0}
+  .wall{grid-template-columns:repeat(3,1fr)}
+  .bento{grid-template-columns:1fr 1fr}.c1{grid-column:span 2}.c2,.c3,.c4,.c5{grid-column:span 1}
+  .duel,.quotes{grid-template-columns:1fr}
+  .tix{grid-template-columns:1fr 1fr}
+  .stack .frame + .frame{position:relative;width:80%;right:auto;bottom:auto;margin:-40px 0 0 auto}
+  .top nav a:not(.gh):not(.deck){display:none}
+}
+@media (max-width:620px){
+  .wrap{padding:0 16px}
+  body{font-size:17.5px}
+  .hero{padding:44px 0 40px}
+  .band .wrap{grid-template-columns:1fr}.rc{border-left:0;padding-left:0;border-top:1.5px solid var(--rule)}.rc:first-child{border-top:0}
+  .wall{grid-template-columns:repeat(2,1fr);gap:10px 14px}
+  .facts{grid-template-columns:1fr}.facts div{border-left:0;border-top:1.5px solid var(--rule)}.facts div:first-child{border-top:0}
+  .bento{grid-template-columns:1fr}.c1,.c2,.c3,.c4,.c5{grid-column:span 1}
+  .stamp{right:-6px;top:-24px;font-size:16px}
+  .pp h2{white-space:normal;font-size:26px}
+  h1 em{width:auto}
+  .sh h2 em{white-space:normal}
+  .pp .big{font-size:84px}
+  .lane .fee{font-size:88px}
+  .faq summary{font-size:21px}
+  .top nav a.deck{display:none}
+  .tix{grid-template-columns:1fr}.tix li{margin:-2px 0 0}.tix li::before,.tix li::after{display:none}
+  section.s{padding:72px 0 20px}
+}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}.js .pre{opacity:1;transform:none}}
+@media print{header.top{position:static}*{animation:none!important}.js .pre{opacity:1;transform:none}.term pre{min-height:0}}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><div class="wrap">
+  <a class="logo" href="#top"><img src="img/icon.svg" alt="" width="30" height="30">CURVE<b>BOOK</b></a>
+  <nav aria-label="Primary">
+    <a href="#receipts">Receipts</a><a href="#wall">The wall</a><a href="#form">The Form</a><a href="#how">How it works</a><a href="#faq">FAQ</a>
+    <a class="deck" href="pitch/">Pitch Deck</a>
+    <a class="gh" href="https://github.com/edycutjong/curvebook">GitHub</a>
+  </nav>
+</div></header>
+
+<main id="main">
+<section class="hero" id="top">
+  <div class="hero-bg" aria-hidden="true">
+    <svg viewBox="0 0 800 520"><g fill="none" stroke="#D5CEBB" stroke-width="1.5">
+      <path d="M20 500 C 260 492, 420 440, 560 300 S 760 40, 790 20"/><path d="M20 500 C 300 495, 470 452, 610 322 S 770 70, 790 52" opacity=".7"/>
+      <path d="M20 500 C 340 497, 510 462, 650 344 S 780 100, 790 86" opacity=".45"/>
+      </g></svg>
+  </div>
+  <div class="wrap">
+    <div>
+      <p class="label">Colosseum World's Fair · Meteora DBC · Solana mainnet</p>
+      <h1><span class="l">Ten slots</span><span class="l">after launch,</span>
+        <em>the curve confesses.<svg viewBox="0 0 600 30" preserveAspectRatio="none" aria-hidden="true"><path d="M4 22 C 120 10, 260 26, 380 14 S 560 8, 596 16"/></svg></em></h1>
+      <p class="sub">A Meteora DBC launch lost <b>90.7%</b> of its curve to one wallet in slot 0, on a config with no anti-sniper schedule. Curvebook decodes the first ten slots of every launch live from Solana mainnet (<b>45 of 73</b> windows had outside buys) and ranks curves by that record, so you can launch on one that holds.</p>
+      <div class="cta">
+        <a class="btn p" href="https://github.com/edycutjong/curvebook"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.42-2.7 5.39-5.26 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5z"/></svg>View on GitHub</a>
+        <a class="btn" href="pitch/">Pitch Deck</a>
+        <a class="btn" href="https://x.com/edycutjong/status/2106581843499954490">Follow the build</a>
+      </div>
+      <div class="run"><code id="runcmd">pnpm install &amp;&amp; docker compose up -d db &amp;&amp; pnpm worker</code><button type="button" id="copy" aria-label="Copy the run command">Copy</button></div>
+      <p class="proof">keyless · <i>live on mainnet</i> · decoded from EvtSwap2 · 20/20 re-verified · router on devnet</p>
+    </div>
+
+    <article class="pp" aria-label="Past-performance card for a real mainnet launch">
+      <div class="stamp" aria-hidden="true">No anti-sniper schedule</div>
+      <div class="head"><h2>Pool BZRdad…W2Gf</h2><div class="slot">MAINNET · SLOT<br>453,073,301</div></div>
+      <div class="strip" id="ppstrip" role="img" aria-label="First ten slots: slot 0 red, 90.6% of the curve bought by one outside wallet; slots 2, 6 and 8 small outside buys; the rest clear."></div>
+      <div class="idx" aria-hidden="true"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></div>
+      <div class="big">90.7%</div>
+      <p class="read">of the curve, gone in slot 0. Its config: a flat 0.25% fee from the first slot.</p>
+      <div class="buys" role="list" aria-label="Outside buys in the first ten slots">
+        <div class="row" role="listitem"><span>+0</span><span>61VF…B82L</span><span>9.208 SOL</span><span class="red">90.6%</span></div>
+        <div class="row" role="listitem"><span>+2</span><span>AKof…MzsY</span><span>0.01 SOL</span><span>0.05%</span></div>
+        <div class="row" role="listitem"><span>+6</span><span>BotV…dBot</span><span>0.001 SOL</span><span>&lt;0.01%</span></div>
+        <div class="row" role="listitem"><span>+8</span><span>7CHA…Jc9f</span><span>0.0103 SOL</span><span>0.05%</span></div>
+      </div>
+      <p class="src">Create tx <a href="https://solscan.io/tx/5geVVHpQ79bTT2e1FVN2X9t6jggfG1nPagVNjSFPcPa1M7KZ3Lr2Fzcs8Wi2BjeShb3ScBfunfKxMnDHspjzs5YH">5geVVH…s5YH</a> · slot-0 buy <a href="https://solscan.io/tx/2xwpzmLa2fPScTxXoAetw6sw5XKRfYchrLbJvQkvnC19Y5toWm9GhvHgxNrWL35zJEj2zeV1EKfuhr9gQUiDSbCt">2xwpzm…SbCt</a></p>
+    </article>
+  </div>
+</section>
+
+<section class="band" id="receipts" aria-label="Receipts">
+  <div class="wrap">
+    <div class="rc"><div class="n red"><span data-count="90.7" data-dec="1">90.7</span><small>%</small></div><p>of one launch's curve, gone in slot 0 to one wallet paying 9.208 SOL</p><div class="pf">DEMO.md §1 · Solscan</div></div>
+    <div class="rc"><div class="n"><span data-count="45">45</span><small> / 73</small></div><p>launch windows where outside wallets bought within ten slots</p><div class="pf">fixtures/snapshot-453074621</div></div>
+    <div class="rc"><div class="n"><span data-count="20">20</span><small> / 20</small></div><p>sampled buys re-fetched from mainnet: slot, payer and amount match</p><div class="pf">pnpm proof · DEMO.md §2</div></div>
+    <div class="rc"><div class="n"><span data-count="672">672</span></div><p>tests, 100% line and branch coverage on core, worker and web/lib</p><div class="pf">README · Testing &amp; CI</div></div>
+  </div>
+</section>
+
+<section class="s" id="demo">
+  <div class="wrap">
+    <div class="sh"><div><p class="label">Scene 01 · The receipt</p><h2>Watch a launch <em>prove itself</em></h2></div>
+      <p>Every pool gets a receipt: ten cells, slot by slot, each buy with its wallet, its SOL and its share of the curve. On the right, the proof chain that keeps those numbers honest, replayed from the committed run.</p></div>
+    <div class="pair">
+      <figure class="frame pre" style="margin:0">
+        <div class="bar" aria-hidden="true"><span></span><span></span><span></span><code>curvebook / pool / EquQ…PVQX</code></div>
+        <img src="img/receipt.png" alt="Curvebook receipt — a real mainnet pool where one outside wallet bought 79.2% of the curve in slot 0" width="1134" height="1280" loading="lazy">
+        <figcaption>A real mainnet launch from the first half hour of capture: one outside wallet, 79.2% of the curve, slot 0.</figcaption>
+      </figure>
+      <div class="term pre" aria-label="Terminal replay of pnpm proof">
+        <div class="bar"><span>zsh — curvebook</span><span>pnpm proof</span></div>
+        <pre id="term"><span class="cmd">$ pnpm proof</span>
+<span class="dim">snapshot fixtures/snapshot-453074621.json.gz  sha256 a44401839a76065c…</span>
+<span class="dim">recompute … slots 453070248–453074621, offline</span>
+  73 windows re-derived from 338 buys: <span class="ok">all match</span>
+  37 configs, 0 eligible (≥20 complete windows, ≥5 creators)
+live config_stats vs recomputed: <span class="ok">identical</span>
+<span class="ok">✓</span> 5PdiqvAJKPuenGKH3CnN…  slot 453074360 (+7)  outside
+<span class="ok">✓</span> xfnWhhjvSkyUKun7e4YS…  slot 453074353 (+0)  outside
+<span class="ok">✓</span> 2vtcHo4NRZ2ASbhugm1n…  slot 453073858 (+0)  outside
+<span class="ok">✓</span> vHv66ovaxCUGgJLqKrYm…  slot 453074617 (+2)  outside
+<span class="ok">✓</span> 5CWCB9833jnPf87dNMVf…  slot 453072509 (+3)  outside
+<span class="dim">… 15 more</span>
+
+<span class="ok">20/20 match</span> <span class="dim">(sample seeded by snapshot sha256)</span></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="s" id="wall">
+  <div class="wrap">
+    <div class="sh"><div><p class="label">Scene 02 · The market</p><h2>It's not <em>one launch</em></h2></div>
+      <p>Every launch window in the committed snapshot, first thirty minutes of the live index, in creation order. Each strip is one pool's first ten slots: red is supply bought by wallets other than the creator. Hover a strip for the pool; click to open it on Solscan.</p></div>
+    <div class="wall-box pre">
+      <ul class="wall" id="wallgrid" aria-label="73 launch windows"></ul>
+      <div class="tip" id="tip" aria-hidden="true"></div>
+      <div class="wall-legend"><span>73 windows · slots 453,070,248 → 453,074,621 · fixtures/snapshot-453074621.json.gz</span>
+        <button type="button" id="worstbtn" aria-pressed="false">Circle the seven worst</button></div>
+    </div>
+    <div class="facts pre">
+      <div><div class="n red">45 / 73</div><p>windows had outside buys in slots 0–9.</p></div>
+      <div><div class="n">7</div><p>lost more than a tenth of their curve before slot 10.</p></div>
+      <div><div class="n red">90.7%</div><p>the worst: one wallet bought it in slot 0 for 9.208 SOL.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="s" id="form">
+  <div class="wrap">
+    <div class="sh"><div><p class="label">Scene 03 · The Form</p><h2>Pick a curve <em>by its record</em></h2></div>
+      <p>The Form ranks every DBC config by its median first-ten-slot sniper share, the way a racing form lists a runner's last starts. Each config page reads its on-chain parameters back in plain words and shows the fee a slot-0 buyer would pay.</p></div>
+    <div class="form-grid">
+      <div class="stack pre">
+        <figure class="frame" style="margin:0"><div class="bar" aria-hidden="true"><span></span><span></span><span></span><code>curvebook / the form</code></div>
+          <img src="img/app-form.png" alt="The Form — DBC configs ranked by first-ten-slot sniper share, live from mainnet" width="1600" height="1000" loading="lazy"></figure>
+        <figure class="frame" style="margin:0"><div class="bar" aria-hidden="true"><span></span><span></span><span></span><code>curvebook / config</code></div>
+          <img src="img/app-config.png" alt="Config page — the on-chain parameters in plain words and the fee in each of the first ten slots" width="1600" height="1000" loading="lazy"></figure>
+      </div>
+      <ol class="rules">
+        <li><b>Ranked only with real form:</b> at least 20 complete windows from at least 5 distinct creators.</li>
+        <li><b>Ties are declared, not hidden:</b> ranks share a place when their 90% bootstrap intervals overlap.</li>
+        <li><b>Farming shows:</b> the top creator's share of launches is printed beside every config.</li>
+        <li><b>Plain words from the chain:</b> "Flat 0.25% fee from the first slot. No anti-sniper schedule."</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<section class="s" id="how">
+  <div class="wrap">
+    <div class="sh"><div><p class="label">Scene 04 · How it works</p><h2>Five parts, <em>one flow</em></h2></div>
+      <p>Pick a curve by its measured form, launch on it from your own wallet, and watch the new pool's first ten slots prove the number.</p></div>
+    <div class="bento">
+      <article class="card c1 pre">
+        <svg viewBox="0 0 52 52" aria-hidden="true"><g fill="none" stroke="#F3EFE4" stroke-width="2.5"><rect x="3" y="30" width="8" height="8"/><rect x="13" y="30" width="8" height="8"/><rect x="23" y="30" width="8" height="8"/><rect x="33" y="30" width="8" height="8"/><path d="M4 26 C 18 24, 30 16, 48 4"/></g><rect x="3" y="30" width="8" height="8" fill="#C4122F"/></svg>
+        <h3>Decode the buyer</h3>
+        <p>EvtSwap2 has no payer field, so every buy is paired with the swap instruction that emitted it, even when an aggregator routes it. Failed transactions, the legacy EvtSwap twin and v1 transactions are all handled.</p>
+        <span class="chip">EvtSwap2 · event-CPI · payer pairing</span>
+      </article>
+      <article class="card c2 pre">
+        <svg viewBox="0 0 52 52" aria-hidden="true"><g fill="none" stroke="#1C1B18" stroke-width="2.5"><path d="M6 8h40v36H6z"/><path d="M12 18h28M12 26h28M12 34h16"/><path d="M34 32l4 4 8-9" stroke="#1E6B45"/></g></svg>
+        <h3>Finalize from the ledger</h3>
+        <p>Windows are re-read from confirmed signatures after slot +42, so a dropped fork or a stream gap can't shorten one.</p>
+        <span class="chip">getSignaturesForAddress</span>
+      </article>
+      <article class="card c3 pre">
+        <svg viewBox="0 0 52 52" aria-hidden="true"><g fill="none" stroke="#1C1B18" stroke-width="2.5"><path d="M8 44V8M8 44h38"/><path d="M14 30h6v14h-6zM26 22h6v22h-6zM38 34h6v10h-6z"/><path d="M22 14h14" stroke="#C4122F"/></g></svg>
+        <h3>Rank honestly</h3>
+        <p>≥ 20 windows from ≥ 5 creators to rank; ties when 90% bootstrap intervals overlap.</p>
+        <span class="chip">1,000-resample CI</span>
+      </article>
+      <article class="card c4 pre">
+        <svg viewBox="0 0 52 52" aria-hidden="true"><g fill="none" stroke="#1C1B18" stroke-width="2.5"><circle cx="26" cy="26" r="18"/><path d="M26 14v12l8 6"/><path d="M40 8l6 6" stroke="#C4122F"/></g></svg>
+        <h3>Launch on a preset</h3>
+        <p>One function builds createPoolWithFirstBuy with an SDK-quoted slippage guard. The relay lands only what it issued, once.</p>
+        <span class="chip">buildLaunchTx · relay guard</span>
+      </article>
+      <article class="card c5 pre">
+        <svg viewBox="0 0 52 52" aria-hidden="true"><g fill="none" stroke="#1C1B18" stroke-width="2.5"><path d="M26 6v14M26 20l-14 22M26 20l14 22"/><circle cx="12" cy="44" r="4" fill="#C4122F" stroke="none"/><circle cx="40" cy="44" r="4"/></g></svg>
+        <h3>The sniper tax pays the author</h3>
+        <p>A preset's fee claimer is a router PDA that splits every claim author/treasury on-chain.</p>
+        <span class="chip">curvebook_router · devnet</span>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="s" id="duel">
+  <div class="wrap">
+    <div class="sh"><div><p class="label">Scene 05 · The fix</p><h2>Same buy. <em>Two curves.</em></h2></div>
+      <p>One outside buy in slot +2, measured on the real Meteora DBC program (dumped from mainnet, run on a local validator). The creator's own bundled first buy paid 100 bps on both.</p></div>
+    <div class="duel">
+      <div class="lane pre"><h3>Slow Cliff preset</h3><div class="meta">exponential schedule · 50% → 1% over 20 slots</div>
+        <div class="fee red"><span data-count="3381" data-sep="1">3,381</span> <span class="u">bps</span></div>
+        <div class="meter" aria-hidden="true"><i data-w="100" style="width:100%"></i></div>
+        <p>The formula predicted 3,382. Fees routed to the preset: 0.341 SOL.</p></div>
+      <div class="lane flat pre"><h3>Flat 1% curve</h3><div class="meta">the default launchpad shape · no schedule</div>
+        <div class="fee"><span data-count="100">100</span> <span class="u">bps</span></div>
+        <div class="meter" aria-hidden="true"><i data-w="2.96" style="width:2.96%"></i></div>
+        <p>Same buy, a thirty-fourth of the fee. Fees routed: 0.0176 SOL.</p></div>
+    </div>
+    <div class="rx pre">
+      <h3>The router on a public network <span>devnet · curvebook_router 4bjaHz…4iKd</span></h3>
+      <ol class="tix">
+        <li><span class="no">Slip 01</span><span class="what">Launch on Slow Cliff</span><span class="res">creator's bundled buy paid <b>100 bps</b></span><a class="sig" href="https://solscan.io/tx/3step6BPMf1geyrZT13yUgGh5crTBzZ87XYRC3FrM54a97Lwty8DQq8oDLviiDSPCH6cajDnWbzvKBXPDLzGy1zD?cluster=devnet">3step6…zy1zD ↗</a></li>
+        <li><span class="no">Slip 02</span><span class="what">Outside buy · slot +5</span><span class="res">paid <b class="red">1,880 bps</b></span><a class="sig" href="https://solscan.io/tx/3ZzQQ2Yv45m1MDMs3AU6WsoCfu18TEEtT9Pj53zsrrYWy1CwoV9rPiLFV7jvB4BFVUtFXjVxQs74zwT9yZPDEmKz?cluster=devnet">3ZzQQ2…DEmKz ↗</a></li>
+        <li><span class="no">Slip 03</span><span class="what">claim_creation_split</span><span class="res"><b>0.0315 SOL</b> author · <b>0.0135 SOL</b> treasury</span><a class="sig" href="https://solscan.io/tx/ba7s2oq6XsjLBw5bqac3q99R2n538wWS43wEfzhT35P9HgnFvYz5YUy3e61L1XWuyHQ31Lq8Ger5yworj59nxQE?cluster=devnet">ba7s2o…9nxQE ↗</a></li>
+        <li><span class="no">Slip 04</span><span class="what">claim_trading_split</span><span class="res">split on-chain · decoded fees = SDK total <b>41,224,960</b></span><a class="sig" href="https://solscan.io/tx/2yiYX6TiC9e8JiP7MMPZnAT8d5jA53g97TgupqmFswtcoTsHxASjxULJG7sA5kHzJ35Qo47QpFFyxwL7b12UuCAA?cluster=devnet">2yiYX6…2UuCAA ↗</a></li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<section class="s" id="reel">
+  <div class="wrap reel">
+    <div><p class="label">Scene 06 · Twenty-two seconds</p><h2 class="disp" style="font-size:clamp(46px,5vw,76px);margin:12px 0 18px">The whole story, <em style="font:italic 600 .8em var(--font-body);text-transform:none;color:var(--before)">one breath</em></h2>
+      <p style="max-width:52ch">The 90.7% launch, the wall of 73 windows, and the preset that charges a slot-two sniper 3,381 bps. Every number in it is in the repository.</p></div>
+    <video class="pre" controls preload="none" playsinline poster="assets/curvebook-22s-poster.jpg" aria-label="Curvebook in 22 seconds">
+      <source src="assets/curvebook-22s.mp4" type="video/mp4"></video>
+  </div>
+</section>
+
+<section class="s" id="honest">
+  <div class="wrap">
+    <div class="sh"><div><p class="label">Scene 07 · Honest by design</p><h2>What it <em>doesn't</em> do yet</h2></div>
+      <p>Lifted straight from the README. A limit you can read is worth more than a claim you can't check.</p></div>
+    <div class="quotes">
+      <blockquote class="pre"><p><code style="font:600 .82em var(--font-data)">curvebook_router</code> runs on devnet, where the full launch → claim → on-chain split path is on the explorer; it is not on mainnet yet.</p><cite>— README · Status, honestly</cite></blockquote>
+      <blockquote class="pre"><p>The index covers launches since capture start. There is no backfill: gRPC replay reaches ~23 minutes back, by design.</p><cite>— README · Status, honestly</cite></blockquote>
+      <blockquote class="pre"><p>A wallet the creator funded counts as outside. SNP10 measures supply that left the creator's key, not intent.</p><cite>— README · The metric</cite></blockquote>
+    </div>
+  </div>
+</section>
+
+<section class="s" id="faq">
+  <div class="wrap">
+    <div class="sh"><div><p class="label">Scene 08 · Questions a judge would ask</p><h2>Ask us <em>anything</em></h2></div><p>Six answers, each with the file that backs it.</p></div>
+    <div class="faq">
+      <details><summary>Is this real mainnet data?</summary><p>Yes. Every window is decoded from Meteora DBC transactions on Solana mainnet since capture start. <code>pnpm proof</code> re-fetches 20 sampled buys from mainnet and checks slot, payer and amount: 20/20 match (DEMO.md §2).</p></details>
+      <details><summary>What isn't on mainnet yet?</summary><p>The royalty router runs on devnet, with every step on the explorer (DEMO.md §3b). Mainnet presets name the author's wallet as fee claimer until the router moves to mainnet.</p></details>
+      <details><summary>What counts as an "outside" buy?</summary><p>Any buy whose paying key is not the pool creator's. The payer comes from the DBC swap instruction that emitted the event, so aggregator-routed buys are attributed too. Creator-funded wallets count as outside, and the page says so.</p></details>
+      <details><summary>Can a launchpad farm a good rank?</summary><p>Not cheaply. A config needs at least 20 complete windows from at least 5 creators, the top creator's share of launches is printed, and ranks tie when the 90% intervals overlap.</p></details>
+      <details><summary>Where does Solami come in?</summary><p>Yellowstone gRPC streams every DBC transaction with <code>from_slot</code> replay for gapless reconnects, and Beam lands launches with a public receipt. Without a key the worker falls back to public RPC, so anyone can run it.</p></details>
+      <details><summary>Can my launchpad use it without your UI?</summary><p>Yes. Call <code>buildLaunchTx</code> from your own backend (examples/launch-on-preset.ts). The preset's royalty is enforced by its on-chain config, not by our frontend.</p></details>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer><div class="wrap">
+  <a class="logo" href="#top"><img src="img/icon.svg" alt="" width="26" height="26">CURVE<b>BOOK</b></a>
+  <nav aria-label="Footer"><a href="https://github.com/edycutjong/curvebook">GitHub</a><a href="pitch/">Pitch Deck</a><a href="https://x.com/edycutjong/status/2106581843499954490">Build thread</a><a href="https://github.com/edycutjong/curvebook/blob/main/DEMO.md">Receipts</a><a href="https://github.com/edycutjong/curvebook/blob/main/LICENSE">MIT</a></nav>
+  <small>Built for Colosseum World's Fair 2026 · Meteora DBC · Solami · Solana</small>
+</div></footer>
+
+<script>
+(() => {
+  const WALL = [["54KqvPiq19EAiMZyLxYcy2RpPB64SXTY8rauJDvY9jCA",0,[0,0,0,0,0,0,0,0,0,0],0],["BAvhWNUzH8XNCJ3iYqSUa6fibzUmzq4eDeRwsddU1M3k",0,[0,0,0,0,0,0,0,0,0,0],0],["75iiUzyAmNKSGWS8W2iTarAvVu11tXHy6Uh179GrhWqy",0.07438,[0,0.074377,0,0,0,0,0,0,0,0],2],["EKvJemMquESeXZpAETBg4SDGRayuk4mDBvZ4XoDKAdFT",0.00272,[0,0.000279,0.001165,0.00039,0.000881,0,0,0,0,0],6],["G22pwWGpQWYfoEvvJehvCiGoYdsboYP9s1nA9N4J3MD3",0.00257,[0,0,0.001279,0.000267,0.000631,0.00029,0,0,0,9.9e-05],8],["HZ2YiJEQ9xg7EsCD8n9FPnW6qBQBUkjQYf9atJiCHqvR",0.00493,[0.001483,0,0.001631,7.9e-05,0.000389,0,0.000553,0,0,0.000793],11],["DeYV2da1NinwVQEP6xSCBsn668Lywng5XhRob9wR77SR",0,[0,0,0,0,0,0,0,0,0,0],1],["7h5EBhL6sf1A2VZ3wD6m4bcGye1hn4oBUqJFxd3jQ1bf",0.00252,[0,6.1e-05,0.000874,0.001223,6e-05,0.0003,0,0,0,0],9],["Bswv6echs715YakdtFZBezVHWZ5xkXRUVoqw1VvFuRHh",0,[0,0,0,0,0,0,0,0,0,0],1],["6QUjZaLbn6Mg976txnyPUNxeaTBjtKsLUm5Y3eUJ5Qko",0.00185,[0,0,5e-06,0,0.001073,0,5.4e-05,0.000719,0,0],5],["6pUyUXVD9CB1TzZxoq7unFiEKFR8oWfMKAqNsUK6nvsj",0.00494,[0.001483,0.000334,0.001644,0,0,0,0.001347,0,0.000135,0],12],["3NN6AQxwcemXkxwp8imWpqCEKgPUXTonQsxEUohZGF7D",0.00248,[0,0,0.000759,0,0.000677,0.000542,0.000499,0,0,0],8],["J4NBUUAfUGrruqKrxUwnPpb8i2G7uzPvQdndZ7wHWpfR",0.79699,[0.791801,0.001391,0,0.001904,0.001148,7.9e-05,0.000666,0,0,0],10],["CgStYEA5mX8NGDZUVq2TJ7UraC2khbUFuEvHdmSHqKX4",0.00187,[0,0.000407,0,0.000622,0,5.2e-05,0.000535,0.000258,0,0],7],["EfkC7pPmUx4oT3pPCccuobYPZrDMfnW4Bp5FnBxcvrS5",0.00143,[0,0.000543,0.000886,0,0,0,0,0,0,0],4],["FHy8Vi1obuDi9gAexKdE8rrmn6DxJTAB5MDeNr9asyFn",0.00097,[0,0,0,0,0,0,0,0,0.000698,0.000273],3],["2K4gXuq3cm64FdctgJ5TjiZWkAkx6BLEKhttxrrKRLVf",0,[0,0,0,0,0,0,0,0,0,0],1],["Fobm4sp4nxdWbE1xsYSAbDXf2LDAexXfge5KYxnxysgZ",0.00184,[0.000378,0,0.000622,0,0,5.2e-05,0.000531,0.000259,0,0],7],["A8rxPeZ5dLnnz8JjHjumEQF64hejMtprQqFtNKK5Bo7B",0.08557,[0,0.085573,0,0,0,0,0,0,0,0],3],["3LB6DLZHmzMyS2t8nmB7RRgrPVDWkLpvFSBJCwbNG5s8",0.00532,[0.000196,0.001078,0,0.002636,0,0,0.000882,0,8.8e-05,0.000441],10],["8nTcYwTWPRqnZh3f6UMP19rj9kTVmJVgxxLMBNH2ErS8",0.00092,[0,0,0.000582,0,0.000244,9.9e-05,0,0,0,0],4],["51rpKE1zpHXJ8ARpvT8nmjgp4HEtsaRpxvcGjVjfLrLU",0,[0,0,0,0,0,0,0,0,0,0],1],["2tA5ywj3Rr1nhnFoPfXr9zcQpcgPvb9HoBicHABhorfv",0.00265,[0,0.000177,0.000519,0.001377,0,8.8e-05,0.000176,5.2e-05,0.000258,0],10],["9zhquU7wjMhS9GwLXk6P9NHjwVA3T5C54dcrpMjCZ8Hh",0.00491,[4.2e-05,0.001433,0.001878,7.9e-05,0,0.000794,0.000553,0,0.000135,0],12],["9fDExV5DLy68ShWtD9seW3bgrBTm8cybYCajod3wpnMk",0,[0,0,0,0,0,0,0,0,0,0],1],["41TUqN7mtJKkDQQ5pB9qLWTmjTSzNtsiqxPpd5zq2Hmg",0.00015,[0.000146,0,0,0,0,0,0,0,0,0],1],["G326oB4YLndxRpxv1WuLW9azKrvHGWFnr3uwKHSbN8jy",0,[0,0,0,0,0,0,0,0,0,0],1],["5PY2n9RF1uX2wBUKrcY9E2pNcuGkbVfmp6byNWP3hqq3",0,[0,0,0,0,0,0,0,0,0,0],0],["8fW7nucE7AndfawYCT6x1a5wzTsjP5jyiU8ebUWoQCky",0,[0,0,0,0,0,0,0,0,0,0],1],["ChB6RC1N2zscscJW9zvXmaQUapHAW7djHmCJEJrDzE7y",0.00015,[0.000146,0,0,0,0,0,0,0,0,0],1],["3ETiFNYmPeTReHCqMAgtfKsPucG5hJKK3ABhWDPnbXa2",0,[0,0,0,0,0,0,0,0,0,0],1],["B9W8rFpFH8ZP1UtX6D8fAcajG8ouZbCwQks6nYjErrmk",0,[0,0,0,0,0,0,0,0,0,0],1],["4wcnmgYoUPgJG9R4suWvXkNwarNQUpDR3s2yCNhKM93Q",0,[0,0,0,0,0,0,0,0,0,0],1],["GVaHdCCJLS7mkC4yqoHYXRa49DPj3jpmyPYHQXDSFn6D",0,[0,0,0,0,0,0,0,0,0,0],1],["BzLnnKQf7bRJWHERNQd13jYMHfeNCo3F2ov3CBfJE3Jh",0.00277,[0,0.001471,0,0.000366,0.000933,0,0,0,0,0],7],["G1tkTE1Q8QPy1iRiswJYLGfN1tZo9t6L7TAtK4njDDqq",0.00266,[0.000182,0.000182,0.00114,0.000756,5.2e-05,8.8e-05,0.000258,0,0,0],10],["EquQwosiRpAnJHDSCrZpguhr8mqyCggpjCV47QPePvqx",0.79828,[0.791801,0.001391,0.001747,0.00106,0.001642,0.00027,0,0,0.000373,0],14],["GAfQqYQVqjQWZzf1tgTA1vAXx34TExP4dhhWVdoCY1W",0.00191,[0,0,0,0.000698,0.000267,5.8e-05,0.00089,0,0,0],6],["3Rm997na5bfUcFGRDCUPJ7doak6s92tZUKEGkpvGTCPL",0,[0,0,0,0,0,0,0,0,0,0],1],["AYqxUrtMRaBipuBtYHud5CLzThMzfLQ8cUHJq7PwfGt6",0,[0,0,0,0,0,0,0,0,0,0],1],["6GEbssLssGeZdx57inwjbXQ45py61Z2Rc15kMUKMQpv7",0.00245,[0,3.5e-05,0.000603,3.5e-05,0.000886,0,0.000889,0,0,0],9],["Cj8jMeMuAQdQDfsoqzcbmvPwWesw2U9ryRpi4osCaaMy",0,[0,0,0,0,0,0,0,0,0,0],1],["usHCzF5DuHEoGxtAqtjWJCvuFy6UKwLDYMTLBPR61CE",0.00305,[0,0,0.000506,0.000758,0.000232,0.000504,0.000622,0.000252,0,0.000171],10],["38u8eCoU3emUQ1PYUSeVK4TyPcGLP3bpF2UVv5wh6S4y",0,[0,0,0,0,0,0,0,0,0,0],1],["D7zfaTQv8rcaTT179oEfymjw53aviLNWtuJkmK8gLPPw",0.00212,[0,0.000203,0.000825,0,0.000249,0.000588,0.000258,0,0,0],8],["GznfmSZSX4m6DBQq6UVD8mB3B2RCQt6iLdhJfsKdv8KQ",0,[0,0,0,0,0,0,0,0,0,0],1],["BDow7LrotZvcWzAVLCigHc25xT3i1V3kXHXdjFMDBgtg",0.00015,[0.000146,0,0,0,0,0,0,0,0,0],1],["EymC26h1wxG9bSvLS5zdF6uw2Pn3crQgh7jMkdWAw3VK",0,[0,0,0,0,0,0,0,0,0,0],0],["7DTgpJWpjN88VaKHLJxbyeASUHwYB9sZD5VZDFda95rt",0.00201,[0.000168,0.000168,0.000834,0.000531,5.2e-05,0,0.000258,0,0,0],8],["Cd5W3A6LriSxVEeKSuUNSDTdqTerGTn4Pxza4tXfBfMU",0.79824,[0.791801,0.001391,0.000795,0.000953,0,0.000873,0.001759,0.000666,0,0],14],["D7V4ZEyAtDN6Dz7hp7ie16kRsah4o8rGkLZvzFQBBCpc",0.0025,[0,0,0,0.000759,0.000238,0.000222,0.000529,0.000756,0,0],8],["GWoY8LW8r5imQU6GyWvneRHSiSUbdbscmfV7mAUKtxUs",0.00407,[0,0.001434,4.2e-05,0.001755,0.000445,0.000397,0,0,0,0],10],["BZRdadeK8G3ScYeoPCKReXPNgrxQ48qPysK3jSPmW2Gf",0.90736,[0.905994,0,0.000631,0,0,0,4.5e-05,0,0.000688,0],6],["82NV54MmPkysdwVMSFrN1CxcyUkTZzioKKxNQXpVk5uv",0,[0,0,0,0,0,0,0,0,0,0],1],["Egzhv9Uf68KgucHhprJQusnR7PrJ38Bu897y6fvG3stV",0,[0,0,0,0,0,0,0,0,0,0],0],["CbvFEbAsSiCU7itq3JJ9Cz1K15jKA6n11StSFD997niY",0.36866,[0,0.368658,0,0,0,0,0,0,0,0],2],["72zPZhfvecc8KxEPwjx7chPaEGWksSXVYuQUm1WbT2h5",0,[0,0,0,0,0,0,0,0,0,0],1],["CvJTyebk8iBE41tigF9vfesrFdVLDwBtgWB2TfHFKFbL",0.00189,[0,0,0.000698,0,0.000267,5.8e-05,0.000291,0.000578,0,0],6],["A95494dBKjV5zDGdebgr3HjEUo2JCR4y6zMCAoJwT5cU",0.00208,[0,0.000355,0.000254,0.001157,0,0,0,5.2e-05,0.000258,0],8],["3op2MbrZ7moLrd2bGmPu6mShqMSbWgRrAQEknvsmok1P",0,[0,0,0,0,0,0,0,0,0,0],1],["HUjBHy2J5KcMuBsPdMX4LZvP2s7NbDR5sshZYF1cjVen",0.90666,[0.905994,0,0,0,0.000212,0,0,0,0.000451,0],3],["FeCtvF73eX3QTcKaEqmvxzx75qbp3dAXQgR4auRMucJp",0.00495,[0,0.001433,0.000836,0.001752,0.000397,0.000532,0,0,0,0],12],["GTdMkW3B9UVPZMMRfxULWUdXphFqjuWkkv4rYhydtCTN",0.00205,[0,0.000403,0,0.000622,0.000207,0.000559,0,0.000258,0,0],8],["CwPcJr3HYY9Tm5WvaMETae3bUk2BX7Y5XgVAqB3HZHA",0,[0,0,0,0,0,0,0,0,0,0],1],["7w5pJP3E67yPoaSjG6G7YE6aTMFXFMQB6X8j9zKY3EL2",0.00015,[0.000146,0,0,0,0,0,0,0,0,0],1],["AZSnQLttbWqatxB1QBWJVhsgT4J3c9btjxMHX4Up8yTi",0.00015,[0.000146,0,0,0,0,0,0,0,0,0],1],["2uxG54LESCRowJPMq1eM5hHu37dWJoWpXjuu9ayXi5dy",0.79792,[0.791801,0.001391,0.001747,7.9e-05,0.001156,0,0,0.00175,0,0],12],["FG3cuu8sv6bCJfFaFbCiRYd7iNUE5N8ayhpkEs55jjW9",0.00248,[0,0,0.000954,0,0,0,0.000639,0.0006,0.00029,0],7],["2hB2Pq1ArszaYXWZjLhChDubh7c2Lzz1ndXDJCuzsUPp",0,[0,0,0,0,0,0,0,0,0,0],0],["H5rr5e28pFh3PmWwZYkRxgEN936E6729qUqa2bBGu8Jm",0,[0,0,0,0,0,0,0,0,0,0],1],["FrL9YHqYgWL8q19DqAQhugcDs9hrxU1Duq2MvUtCH9gZ",0,[0,0,0,0,0,0,0,0,0,0],1],["4tWiCtE7u3GVJw77Rge2txAwRQfVyGMEZunwrCPHeUET",0.00201,[0.000344,0,0.000622,0,0.000571,0,0.000259,0,0.000217,0],8],["EopWeQz9L5RRQKX2E6uLywhGxfmZ8XEmZR74Spc3m1T6",0.00143,[0.000297,0,5e-06,0,0,0,5.4e-05,0,0.001073,0],4]];
+  const PER = [0.90599426, 0, 0.0006313, 0, 0, 0, 0.000045053, 0, 0.000687729, 0];
+  const vis = (s) => (s >= 0.05 ? 1 : s > 0 ? 0.22 : 0);
+  const TICK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12.5l5 5L20 6.5" fill="none" stroke="#1E6B45" stroke-width="3.2" stroke-linecap="square"/></svg>';
+  document.documentElement.classList.add("js");
+
+  // Hero past-performance strip: the orchestrated load. Cells fill slot by slot, ticks land when the window closes.
+  const pp = document.getElementById("ppstrip");
+  pp.innerHTML = PER.map((s, k) => `<div class="cell">${s > 0 ? `<i style="height:${vis(s) * 100}%;animation-delay:${0.35 + k * 0.13}s"></i>` : TICK.replace("<svg", `<svg style="animation-delay:${1.75 + k * 0.03}s"`)}</div>`).join("");
+
+  // The wall: 73 real windows from the committed snapshot.
+  const grid = document.getElementById("wallgrid"), tip = document.getElementById("tip");
+  const worst = new Set(WALL.map((w, i) => [w[1], i]).filter(([s]) => s >= 0.1).map(([, i]) => i));
+  grid.innerHTML = WALL.map(([pool, s, per], i) =>
+    `<li><a class="mini${worst.has(i) ? " is-worst" : ""}" href="https://solscan.io/account/${pool}" data-i="${i}" aria-label="Pool ${pool.slice(0, 4)}…${pool.slice(-4)}: ${(s * 100).toFixed(2)}% of the curve bought by outside wallets in the first ten slots">${per.map((c) => `<b><i style="height:${vis(c) * 100}%"></i></b>`).join("")}</a></li>`).join("");
+  const box = grid.parentElement;
+  const show = (a) => {
+    const [pool, s, , buys] = WALL[+a.dataset.i];
+    tip.innerHTML = `${pool.slice(0, 6)}…${pool.slice(-4)}<br><b>${(s * 100).toFixed(s >= 0.1 ? 1 : 2)}%</b> of the curve · ${buys} buys in 10 slots`;
+    const r = a.getBoundingClientRect(), b = box.getBoundingClientRect();
+    tip.style.left = Math.min(r.left - b.left, b.width - 230) + "px";
+    tip.style.top = r.top - b.top - 52 + "px";
+    tip.classList.add("on");
+  };
+  grid.addEventListener("pointerover", (e) => { const a = e.target.closest(".mini"); if (a) show(a); });
+  grid.addEventListener("focusin", (e) => { const a = e.target.closest(".mini"); if (a) show(a); });
+  grid.addEventListener("pointerleave", () => tip.classList.remove("on"));
+  grid.addEventListener("focusout", () => tip.classList.remove("on"));
+  const wb = document.getElementById("worstbtn");
+  wb.addEventListener("click", () => {
+    const on = wb.getAttribute("aria-pressed") !== "true";
+    wb.setAttribute("aria-pressed", String(on));
+    wb.textContent = on ? "Show all 73" : "Circle the seven worst";
+    grid.querySelectorAll(".mini").forEach((m) => { m.classList.toggle("worst", on && m.classList.contains("is-worst")); m.classList.toggle("dim", on && !m.classList.contains("is-worst")); });
+  });
+
+  // Copy the run command.
+  const copy = document.getElementById("copy");
+  copy.addEventListener("click", async () => {
+    try { await navigator.clipboard.writeText(document.getElementById("runcmd").textContent); copy.textContent = "Copied"; }
+    catch { copy.textContent = "Select ↑"; }
+    setTimeout(() => (copy.textContent = "Copy"), 1600);
+  });
+
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+  // Count-ups: the HTML already holds the final value; JS replays it from zero once, when seen.
+  const fmt = (el, v) => { const d = +(el.dataset.dec || 0); el.textContent = el.dataset.sep || v >= 1000 ? Math.round(v).toLocaleString("en-US") : v.toFixed(d); };
+  const countUp = (el) => { const end = +el.dataset.count, t0 = performance.now(), dur = 1100;
+    const step = (t) => { const k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 3); fmt(el, end * e); if (k < 1) requestAnimationFrame(step); else fmt(el, end); };
+    requestAnimationFrame(step); };
+
+  // Terminal replay: types the committed proof output line by line.
+  const term = document.getElementById("term"), full = term.innerHTML;
+  const replay = () => { const lines = full.split("\n"); term.innerHTML = ""; let i = 0;
+    const next = () => { if (i < lines.length) { term.innerHTML = lines.slice(0, ++i).join("\n") + '<span class="caret"></span>'; setTimeout(next, i === 1 ? 520 : 110 + (lines[i - 1].length > 60 ? 70 : 0)); } else term.innerHTML = full + '\n<span class="caret"></span>'; };
+    next(); };
+
+  // Reveal below-the-fold blocks; meters grow when their lane appears.
+  const pre = [...document.querySelectorAll(".pre")].filter((el) => el.getBoundingClientRect().top > innerHeight);
+  document.querySelectorAll(".pre").forEach((el) => { if (!pre.includes(el)) el.classList.remove("pre"); });
+  pre.forEach((el) => el.classList.add("reveal"));
+  const io = new IntersectionObserver((entries) => entries.forEach((en) => {
+    if (!en.isIntersecting) return;
+    const el = en.target; io.unobserve(el); el.classList.remove("pre");
+    el.querySelectorAll("[data-count]").forEach(countUp);
+    if (el.contains(term)) replay();
+    el.querySelectorAll(".meter i").forEach((m) => { m.style.width = "0%"; requestAnimationFrame(() => requestAnimationFrame(() => (m.style.width = m.dataset.w + "%"))); });
+  }), { threshold: 0.18 });
+  document.querySelectorAll(".pre, .band").forEach((el) => io.observe(el));
+})();
+</script>
+</body>
+</html>
