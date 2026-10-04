@@ -6,7 +6,7 @@ This file mirrors the `/judge` page of the running app. Figures that come from t
 
 ## 30-second path
 
-Live app: **https://curvebook.vercel.app** (worker on Railway indexing Solana mainnet 24/7; health at `/integrations/verify`).
+Live app: **https://curvebook.edycu.dev** (worker on Railway indexing Solana mainnet 24/7; health at `/integrations/verify`).
 
 1. **The Form** at `/`: every DBC config, ranked by SNP10.
 2. **A live receipt** at `/pool/<address>`: the newest finalized pool whose window has outside buys (SNP10 > 0). Live on `/judge`.
