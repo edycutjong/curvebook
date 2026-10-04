@@ -305,7 +305,7 @@ footer small{font:500 12px var(--font-data);color:var(--muted)}
         <a class="btn" href="https://x.com/edycutjong/status/2106581843499954490">Follow the build</a>
       </div>
       <div class="run"><code id="runcmd">pnpm install &amp;&amp; docker compose up -d db &amp;&amp; pnpm worker</code><button type="button" id="copy" aria-label="Copy the run command">Copy</button></div>
-      <p class="proof">keyless · <i>live on mainnet</i> · decoded from EvtSwap2 · 20/20 re-verified · router on devnet</p>
+      <p class="proof">keyless · <i>index + presets live on mainnet</i> · decoded from EvtSwap2 · 20/20 re-verified · router on devnet</p>
     </div>
 
     <article class="pp" aria-label="Past-performance card for a real mainnet launch">
@@ -496,7 +496,7 @@ live config_stats vs recomputed: <span class="ok">identical</span>
     <div class="sh"><div><p class="label">Scene 08 · Questions a judge would ask</p><h2>Ask us <em>anything</em></h2></div><p>Six answers, each with the file that backs it.</p></div>
     <div class="faq">
       <details><summary>Is this real mainnet data?</summary><p>Yes. Every window is decoded from Meteora DBC transactions on Solana mainnet since capture start. <code>pnpm proof</code> re-fetches 20 sampled buys from mainnet and checks slot, payer and amount: 20/20 match (DEMO.md §2).</p></details>
-      <details><summary>What isn't on mainnet yet?</summary><p>The royalty router runs on devnet, with every step on the explorer (DEMO.md §3b). Mainnet presets name the author's wallet as fee claimer until the router moves to mainnet.</p></details>
+      <details><summary>What isn't on mainnet yet?</summary><p>The three presets are live on mainnet with one own launch each (DEMO.md §1b), and their fees are claimed there. The royalty router that splits those fees author/treasury runs on devnet, with every step on the explorer (DEMO.md §3b); until it moves, mainnet presets name the author's wallet as fee claimer.</p></details>
       <details><summary>What counts as an "outside" buy?</summary><p>Any buy whose paying key is not the pool creator's. The payer comes from the DBC swap instruction that emitted the event, so aggregator-routed buys are attributed too. Creator-funded wallets count as outside, and the page says so.</p></details>
       <details><summary>Can a launchpad farm a good rank?</summary><p>Not cheaply. A config needs at least 20 complete windows from at least 5 creators, the top creator's share of launches is printed, and ranks tie when the 90% intervals overlap.</p></details>
       <details><summary>Where does Solami come in?</summary><p>Yellowstone gRPC streams every DBC transaction with <code>from_slot</code> replay for gapless reconnects, and Beam lands launches with a public receipt. Without a key the worker falls back to public RPC, so anyone can run it.</p></details>

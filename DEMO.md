@@ -37,6 +37,32 @@ Every buy in that window (from the committed snapshot; share = base bought ÷ th
 "Outside" means *not the creator's signing key*. A wallet the creator funded counts as outside: SNP10 measures what left the creator's
 hands in the first ten slots, not intent. No config had 20 windows from 5 creators yet, so nothing was ranked; the Form says so.
 
+## 1b. Curvebook presets on mainnet (2026-10-04)
+
+The three presets are live on Solana mainnet. Until the router moves to mainnet, their fee claimer is the author's wallet
+(`CLAIMER=wallet`, `scripts/deploy-presets.ts`); the creation fee is DBC's 0.001 SOL minimum. Cost of the three configs: 0.018 SOL.
+
+| Preset | Config |
+|---|---|
+| Slow Cliff | [`8ksBwV…SCMZ`](https://solscan.io/account/8ksBwVjQTTBpPcco4UJ38PCfXQWVW2PKnH8v4DJaSCMZ) · [create_config](https://solscan.io/tx/4Erd3RV372etDqcViNEkdq6UtYNfs5UXjw5RUJRGqnVSyLVoSU3hH6CtLqP6KbBCStwrKV1ZncEsyB28Fhj3o6yF) |
+| Two-Step | [`5nd8WE…TkQJ`](https://solscan.io/account/5nd8WEVudKTrXGy6M5DAHCQGzdaK5jECTRVAEtYtTkQJ) · [create_config](https://solscan.io/tx/5WFiCn4qEBm5bbJATKznGwn6r4vZ9ht8HdTferYq46xAnDHyJQxJVPaBcJrz5CE1SfHE98s4NLrvkd7y4QTwaiFG) |
+| Control | [`H9J9yp…o16U`](https://solscan.io/account/H9J9yp3rXRNF4nKzyuDsXFXGpELaFATjGqezdE6Uo16U) · [create_config](https://solscan.io/tx/2hLsJysk6KTvs7HP1TaiqxTsGSYDdfYW3nq72FKzb9Pg51t1KBqTaEtZFSezfBe64NbUrkHThr7HHWTsbtgkZfkZ) |
+
+One own launch per preset (0.01 SOL bundled first buy), sent through the product's own path: web API build → creator wallet signs →
+worker relay lands it (`scripts/launch.ts`). Windows finalized by the live index; partner fees then claimed with the Meteora SDK
+(`scripts/claim-wallet.ts`):
+
+| Preset | Pool · launch tx | SNP10 | First ten slots | Creation-fee claim | Partner trading fee claimed |
+|---|---|---|---|---|---|
+| Slow Cliff | [`Hfrqri…`](https://solscan.io/account/HfrqriwsyTzyZgSiGxWfhdSTCmYLZNrcsTn2QbA1wY7j) · [launch](https://solscan.io/tx/5ZbhLoBDwU6LpQ9px4TxjwLQtHnyqQqw7jJvN9cJ68GxQd9k3TeQusi26pxh8xhpos8yZZZMLh1gs4Kf7vmvkCte) | 0% | only the creator's buy (100,146 lamports fee on 0.01 SOL = 1%) | [claim](https://solscan.io/tx/2WCcNqTqXjy294N8gcDsZaGCCJPPWa6z58pGETZFiJRVbWGHuLJyVWCaviGgkGwJPVtjY8hN61DSTP3sH9q5wNnn) | 80,117 lamports · [claim](https://solscan.io/tx/3ENTUYthw5hd1gjdjP54MnhKU2TBhNr3XiND3H1aCdCYzjWJcasGx2aUJhaNpCxpgww6czzb4ppdELXmxarKgTbP) |
+| Two-Step | [`8xjK82…`](https://solscan.io/account/8xjK82SZaiVkwWt5BaptL5SEHDTg1KQhtTVCfT8SSjvM) · [launch](https://solscan.io/tx/nuMAsrA9dAHMXu3bsVECwaa4DW9UqkoubeutZXrHTNdEvw2obK2WCSJvafJznSpttatW7YdQoUExQXWmjgMj452) | 0% | only the creator's buy | [claim](https://solscan.io/tx/3T2u2jcuvwT3JqphhQEJkRydQLhBTctsjqFXfFETL8hoa42nGj871vkhn2jYecB5mADBcYShwABx57vsEkoRKEuP) | 80,000 lamports · [claim](https://solscan.io/tx/ejucr4Qe8iuwdfu4uZ2NXj2MAkPTWC7r1HpVUURuQE2AcdQLWqfTqD1tEAqa4HoGH2QDoQEN3SLwYSaAvSVgNDd) |
+| Control | [`AD78zW…`](https://solscan.io/account/AD78zWkKffc4VicQJTRFYj5BvqiqHuybmaAnWB21qGqE) · [launch](https://solscan.io/tx/bpYyDWsk4qW7yY1ddH4sZowqQJEUYyvyhDMVwnaw9JsLkGmex3kwS1bnqf3SCUuFm8q9ijARubGA7K3axabMft1) | 0.23% | creator's buy + an outside wallet (`HxCmPR…`) buying 0.05 SOL in slot +6 and paying **1%** ([tx](https://solscan.io/tx/5S2c4ZxRCb62h3ZyxesmupB3VXZ2VxmVCE38E3cehNxzfnyd6mHaM53vPHaDLvcUQwPFBMy1Rs2e8QHHYvPjLgVQ)) | [claim](https://solscan.io/tx/5GWNBy32Y6BiVJxvFsDmChr86fAquT6UKkKctfKCPwrY3YND3sgxDmrhsgQPGLVmgtEmn32vCfV2wvLwUuopvcfB) | 480,000 lamports · [claim](https://solscan.io/tx/23R8KNw9GzYdb3nwMdKiMRWTCynzDKzKFnsWZ1teqoRuqJqj68ujzqob41U6nbencwYKX4grZSSg21H7zzPnmVqG) |
+
+On Control, the partner fee claimed (480,000 lamports) is exactly 80% of the 600,000 lamports of fees paid in that pool (the creator's
+100,000 + the outside buyer's 500,000): the same partner-share identity (S8) checked on localnet and devnet, now on mainnet.
+One launch per preset is a demonstration, not a statistic; the presets enter the Form's ranking only at ≥ 20 windows from ≥ 5 creators.
+All three launches are the author's own (`third_party = false`). Third-party launches: 0 so far.
+
 ## 2. `pnpm proof` — the number chain
 
 ```bash
@@ -133,6 +159,6 @@ WEB=http://localhost:3001 npx tsx scripts/e2e-launch.ts
 ```
 
 ## 5. What is not on mainnet yet
-- `curvebook_router` on mainnet: it runs on devnet (section 3b). Mainnet presets use the author's wallet as fee claimer (`CLAIMER=wallet`, ≈ 0.03 SOL for three configs); moving the router to mainnet needs ≈ 1.6 SOL of refundable program rent.
+- `curvebook_router` on mainnet: it runs on devnet (section 3b). The mainnet presets (section 1b) use the author's wallet as fee claimer; moving the router to mainnet needs ≈ 1.6 SOL of refundable program rent.
 - Solami gRPC + Beam: wired (`worker/src/sources/grpc.ts`, `worker/src/lander.ts`) and switched on by `SOLAMI_RPC_TOKEN` / `SOLAMI_SWQOS_KEY`.
   The gRPC decoder is tested to produce exactly the events `getTransaction` produces on real mainnet fixtures.

@@ -127,7 +127,7 @@ pnpm rehearse`}</pre>
           <h2 id="limits-h">Honest limitations</h2>
         </div>
         <ul className="readout">
-          <li>The router runs on devnet, with the full claim and split path on the explorer (DEMO.md §3b); it is not on mainnet yet.</li>
+          <li>The three presets are live on mainnet with one own launch each (DEMO.md §1b); the router that splits their fees runs on devnet (DEMO.md §3b), not on mainnet yet.</li>
           <li>The index covers only launches since capture start; nothing earlier is backfilled.</li>
           <li>Creator-funded sybil wallets count as outsiders.</li>
           <li>Keyless mode reads windows from public RPC; Solami gRPC is used when a token is set.</li>

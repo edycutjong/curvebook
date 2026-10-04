@@ -131,7 +131,7 @@ docs/       AUDIT-SCOPE, DX-REPORT, spike notes, images
 
 ## 🧭 Status, honestly
 
-- The index runs live on mainnet. `curvebook_router` runs on **devnet**, where the full launch → claim → on-chain split path is on the explorer ([DEMO.md §3b](DEMO.md)); it is not on mainnet yet (≈ 1.6 SOL of refundable rent).
+- The index runs live on mainnet, and the three presets are **live on mainnet** with one own launch each ([DEMO.md §1b](DEMO.md)). `curvebook_router` runs on **devnet**, where the full launch → claim → on-chain split path is on the explorer ([DEMO.md §3b](DEMO.md)); it is not on mainnet yet (≈ 1.6 SOL of refundable rent).
 - The index covers launches since capture start. There is no backfill: gRPC replay reaches ~23 minutes back, by design.
 - Pre-existing code: none. This repository was started on 2026-10-04 for Colosseum World's Fair.
 

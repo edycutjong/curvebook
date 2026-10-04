@@ -1,0 +1,44 @@
+{
+  "cluster": "mainnet-beta",
+  "claimer": "wallet",
+  "poolCreationFee": 0.001,
+  "router": null,
+  "author": "GiSf4oTFUJWi1Tp3ygEbReVL5gFMq69sYzNGFhckTGdu",
+  "treasury": "GiSf4oTFUJWi1Tp3ygEbReVL5gFMq69sYzNGFhckTGdu",
+  "authorBps": 7000,
+  "presets": [
+    {
+      "slug": "slow-cliff",
+      "name": "Slow Cliff",
+      "builder": "buildCurveWithLiquidityWeights",
+      "summary": "Deeper liquidity at low prices; 50% fee in slot 0 decaying exponentially to 1% over 20 slots; the creator's bundled buy pays the minimum fee.",
+      "config": "8ksBwVjQTTBpPcco4UJ38PCfXQWVW2PKnH8v4DJaSCMZ",
+      "vault": "GiSf4oTFUJWi1Tp3ygEbReVL5gFMq69sYzNGFhckTGdu",
+      "sigs": [
+        "4Erd3RV372etDqcViNEkdq6UtYNfs5UXjw5RUJRGqnVSyLVoSU3hH6CtLqP6KbBCStwrKV1ZncEsyB28Fhj3o6yF"
+      ]
+    },
+    {
+      "slug": "two-step",
+      "name": "Two-Step",
+      "builder": "buildCurveWithTwoSegments",
+      "summary": "Two curve segments; 50% fee in slot 0 falling linearly to 1% over 20 slots; the creator's bundled buy pays the minimum fee.",
+      "config": "5nd8WEVudKTrXGy6M5DAHCQGzdaK5jECTRVAEtYtTkQJ",
+      "vault": "GiSf4oTFUJWi1Tp3ygEbReVL5gFMq69sYzNGFhckTGdu",
+      "sigs": [
+        "5WFiCn4qEBm5bbJATKznGwn6r4vZ9ht8HdTferYq46xAnDHyJQxJVPaBcJrz5CE1SfHE98s4NLrvkd7y4QTwaiFG"
+      ]
+    },
+    {
+      "slug": "control",
+      "name": "Control",
+      "builder": "buildCurve",
+      "summary": "The default launchpad shape: a flat 1% fee from the first slot, no schedule.",
+      "config": "H9J9yp3rXRNF4nKzyuDsXFXGpELaFATjGqezdE6Uo16U",
+      "vault": "GiSf4oTFUJWi1Tp3ygEbReVL5gFMq69sYzNGFhckTGdu",
+      "sigs": [
+        "2hLsJysk6KTvs7HP1TaiqxTsGSYDdfYW3nq72FKzb9Pg51t1KBqTaEtZFSezfBe64NbUrkHThr7HHWTsbtgkZfkZ"
+      ]
+    }
+  ]
+}
