@@ -6,7 +6,7 @@
 | Program id | `4bjaHzaDTYxKiJ7fTMWTyMbHkQtG8t1rc8nNcHHk4iKd` |
 | Source | `program/programs/curvebook_router/src/` — 10 files, 766 lines incl. ~120 lines of unit tests |
 | External program invoked | Meteora Dynamic Bonding Curve `dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN` (IDL 0.2.1), SPL Token / Token-2022 |
-| Mainnet status | **not deployed yet.** Tested on localnet against the DBC binary dumped from mainnet |
+| Deployment | **devnet**: [`4bjaHz…`](https://solscan.io/account/4bjaHzaDTYxKiJ7fTMWTyMbHkQtG8t1rc8nNcHHk4iKd?cluster=devnet), full claim + split path exercised there (DEMO.md §3b). Mainnet: not yet (≈ 1.6 SOL refundable rent) |
 | Upgrade authority | single key during the hackathon; multisig is on the roadmap below |
 
 ## What it holds

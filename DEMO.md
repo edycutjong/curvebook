@@ -83,6 +83,22 @@ Three presets deployed (`create_config` with fee claimer = router vault, then `r
 | I6: unclaimed partner fee drop = split | holds | holds |
 | Creation fee split (70/30) | 0.0315 / 0.0135 SOL | 0.0315 / 0.0135 SOL |
 
+## 3b. The router on a public network (devnet)
+
+`curvebook_router` is deployed on devnet ([program](https://solscan.io/account/4bjaHzaDTYxKiJ7fTMWTyMbHkQtG8t1rc8nNcHHk4iKd?cluster=devnet), [deploy tx](https://solscan.io/tx/5QME1KwTbEmWA6YTzFyhwqggNw8LsbXJuJ1QgiQnS6ArzM8gPxMWv9SjdzhkTDLPgPZK6sphFqAJXHDLhNiZdf1o?cluster=devnet)), byte-identical to the binary the 27 program tests ran against.
+The full royalty path on the Slow Cliff preset ([config](https://solscan.io/account/FvpfixiJ8hfyGxT4Goaww88uG1HJozahPefpD2gQrNfQ?cluster=devnet), [pool](https://solscan.io/account/B84b2oHAAsF8DCqdNhmagV4XESZS6kimSy552ZBEnZ5f?cluster=devnet)), every step an explorer link:
+
+| Step | Tx | Result |
+|---|---|---|
+| `create_config` (fee claimer = router vault) | [2BZZX3…](https://solscan.io/tx/2BZZX3vBCLNDe9m3xBjDysw4c56yVKkuXxbKgPaZMsNta2YSC49taiFoopYncJHb1iHf9CwyoPdYipUkYZMF4jNC?cluster=devnet) | |
+| `register_preset` | [4MEJSx…](https://solscan.io/tx/4MEJSxrYkahAjPucQqcKnAbWbdDMnetp2ZkaURN6FfNrnZpVDBBaNQwkeLd6gh6c1s1SPxqPeY1BE99MDQLkQxLS?cluster=devnet) | |
+| Launch (`createPoolWithFirstBuy`) | [3step6…](https://solscan.io/tx/3step6BPMf1geyrZT13yUgGh5crTBzZ87XYRC3FrM54a97Lwty8DQq8oDLviiDSPCH6cajDnWbzvKBXPDLzGy1zD?cluster=devnet) | creator's bundled buy paid 100 bps |
+| Outside buy, slot +5 | [3ZzQQ2…](https://solscan.io/tx/3ZzQQ2Yv45m1MDMs3AU6WsoCfu18TEEtT9Pj53zsrrYWy1CwoV9rPiLFV7jvB4BFVUtFXjVxQs74zwT9yZPDEmKz?cluster=devnet) | paid **1,880 bps** |
+| `claim_creation_split` → CPI `claim_partner_pool_creation_fee` | [ba7s2o…](https://solscan.io/tx/ba7s2oq6XsjLBw5bqac3q99R2n538wWS43wEfzhT35P9HgnFvYz5YUy3e61L1XWuyHQ31Lq8Ger5yworj59nxQE?cluster=devnet) | 0.0315 SOL author · 0.0135 SOL treasury |
+| `claim_trading_split` → CPI `claim_trading_fee` | [2yiYX6…](https://solscan.io/tx/2yiYX6TiC9e8JiP7MMPZnAT8d5jA53g97TgupqmFswtcoTsHxASjxULJG7sA5kHzJ35Qo47QpFFyxwL7b12UuCAA?cluster=devnet) | 28,857,472 author · 12,367,488 treasury (wSOL atoms); I6 holds |
+
+S8 on devnet: Σ decoded partner fees = `getPoolFeeBreakdown().partner.totalQuoteFee` = 41,224,960 exactly. Receipt: `fixtures/rehearsal-devnet.json`.
+
 ## 4. Full-stack launch (localnet)
 
 ```bash
@@ -99,6 +115,6 @@ WEB=http://localhost:3001 npx tsx scripts/e2e-launch.ts
 ```
 
 ## 5. What is not on mainnet yet
-- `curvebook_router` and the three presets: the deploy script is `scripts/deploy-presets.ts`. It needs ≈ 2.5 SOL (program rent ≈ 1.6 SOL).
+- `curvebook_router` on mainnet: it runs on devnet (section 3b). Mainnet presets use the author's wallet as fee claimer (`CLAIMER=wallet`, ≈ 0.03 SOL for three configs); moving the router to mainnet needs ≈ 1.6 SOL of refundable program rent.
 - Solami gRPC + Beam: wired (`worker/src/sources/grpc.ts`, `worker/src/lander.ts`) and switched on by `SOLAMI_RPC_TOKEN` / `SOLAMI_SWQOS_KEY`.
   The gRPC decoder is tested to produce exactly the events `getTransaction` produces on real mainnet fixtures.

@@ -4,7 +4,7 @@
 //   → an outside wallet buys in the next slots → decode the window → claim_creation_split.
 // Writes fixtures/rehearsal-localnet.json. Nothing here is mainnet evidence; it proves the path.
 import { writeFileSync, mkdirSync } from "node:fs";
-import { ComputeBudgetProgram, Connection, Keypair, LAMPORTS_PER_SOL, PublicKey, Transaction } from "@solana/web3.js";
+import { ComputeBudgetProgram, Connection, Keypair, LAMPORTS_PER_SOL, PublicKey, SystemProgram, Transaction } from "@solana/web3.js";
 import { NATIVE_MINT, getAssociatedTokenAddressSync } from "@solana/spl-token";
 import BN from "bn.js";
 import { DynamicBondingCurveClient } from "@meteora-ag/dynamic-bonding-curve-sdk";
@@ -12,33 +12,46 @@ import {
   buildLaunchTx, buildWindow, claimCreationSplitIx, claimTradingSplitIxs, decodePoolConfig, decodePreset, decodeTx, feeBps, presetPda,
   type SwapEvent,
 } from "@curvebook/core";
-import { deployAll, send } from "./lib/deploy.js";
+import { deployAll, loadKeypair, send } from "./lib/deploy.js";
 
 const RPC = process.env.LOCALNET_URL ?? "http://127.0.0.1:8899";
 const conn = new Connection(RPC, "confirmed");
 const dbc = new DynamicBondingCurveClient(conn, "confirmed");
 
+// Localnet: airdrop. Devnet (FUNDER=<keypair path>): transfer from a funded wallet, since airdrops are rate-limited.
+const funder = process.env.FUNDER ? loadKeypair(process.env.FUNDER) : null;
 async function funded(sol: number) {
   const kp = Keypair.generate();
+  if (funder) {
+    await send(conn, new Transaction().add(SystemProgram.transfer({ fromPubkey: funder.publicKey, toPubkey: kp.publicKey, lamports: Math.round(sol * LAMPORTS_PER_SOL) })), [funder]);
+    return kp;
+  }
   const sig = await conn.requestAirdrop(kp.publicKey, sol * LAMPORTS_PER_SOL);
   await conn.confirmTransaction(sig, "confirmed");
   return kp;
 }
 
 // Raw JSON-RPC: the decoder reads the wire shape, not web3.js's parsed Message objects.
-const getTx = async (sig: string) => {
-  const r = await fetch(RPC, { method: "POST", headers: { "content-type": "application/json" },
-    body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getTransaction", params: [sig, { encoding: "json", commitment: "confirmed", maxSupportedTransactionVersion: 1 }] }) });
-  return ((await r.json()) as any).result;
+// Retries rate limits and not-yet-indexed transactions (public devnet does both).
+const getTx = async (sig: string): Promise<any> => {
+  for (let i = 0; i < 12; i++) {
+    const r = await fetch(RPC, { method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getTransaction", params: [sig, { encoding: "json", commitment: "confirmed", maxSupportedTransactionVersion: 1 }] }) });
+    const j: any = r.status === 429 ? null : await r.json().catch(() => null);
+    if (j?.result) return j.result;
+    await new Promise((s) => setTimeout(s, 700 * (i + 1)));
+  }
+  throw new Error(`transaction not available: ${sig}`);
 };
 const waitSlot = async (target: number) => {
   while ((await conn.getSlot("confirmed")) < target) await new Promise((r) => setTimeout(r, 150));
 };
 
-const author = await funded(20);
-const treasury = await funded(1); // rent-exempt recipient
-const creator = await funded(10);
-const sniper = await funded(20);
+const author = await funded(funder ? 0.35 : 20);
+const treasury = await funded(funder ? 0.03 : 1); // rent-exempt recipient
+const creator = await funded(funder ? 0.6 : 10);
+const sniper = await funded(funder ? 1.05 : 20);
+const OUTSIDE_BUY = funder ? LAMPORTS_PER_SOL / 4 : LAMPORTS_PER_SOL; // devnet SOL is scarce
 
 console.log("deploying presets…");
 const presets = await deployAll(conn, author, treasury.publicKey, 7000);
@@ -56,12 +69,12 @@ for (const p of presets.filter((x) => x.slug !== "two-step")) {
   const createTx = await getTx(createSig);
   const s0 = createTx.slot;
 
-  // An outside wallet buys 1 SOL in slot s0+1 and again near the end of the window.
+  // An outside wallet buys (1 SOL localnet, 0.25 SOL devnet) in slot s0+1 and again near the end of the window.
   const buys: string[] = [];
   for (const target of [s0 + 1, s0 + 8]) {
     await waitSlot(target);
     const tx = await dbc.pool.swap({
-      owner: sniper.publicKey, pool: built.pool, amountIn: new BN(LAMPORTS_PER_SOL), minimumAmountOut: new BN(0),
+      owner: sniper.publicKey, pool: built.pool, amountIn: new BN(OUTSIDE_BUY), minimumAmountOut: new BN(0),
       swapBaseForQuote: false, referralTokenAccount: null,
     });
     buys.push(await send(conn, tx, [sniper]));
@@ -122,5 +135,6 @@ for (const p of presets.filter((x) => x.slug !== "two-step")) {
 }
 
 mkdirSync("fixtures", { recursive: true });
-writeFileSync("fixtures/rehearsal-localnet.json", JSON.stringify({ network: "localnet (real DBC program dumped from mainnet)", at: new Date().toISOString(), presets, results }, null, 2));
-console.log("\nwrote fixtures/rehearsal-localnet.json");
+const NET = RPC.includes("devnet") ? "devnet" : "localnet";
+writeFileSync(`fixtures/rehearsal-${NET}.json`, JSON.stringify({ network: NET === "devnet" ? "devnet (Meteora DBC devnet deployment + curvebook_router)" : "localnet (real DBC program dumped from mainnet)", at: new Date().toISOString(), presets, results }, null, 2));
+console.log(`\nwrote fixtures/rehearsal-${NET}.json`);

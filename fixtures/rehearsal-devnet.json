@@ -1,0 +1,26 @@
+{
+  "network": "devnet (Meteora DBC devnet deployment + curvebook_router)",
+  "router": "4bjaHzaDTYxKiJ7fTMWTyMbHkQtG8t1rc8nNcHHk4iKd",
+  "routerDeploySig": "5QME1KwTbEmWA6YTzFyhwqggNw8LsbXJuJ1QgiQnS6ArzM8gPxMWv9SjdzhkTDLPgPZK6sphFqAJXHDLhNiZdf1o",
+  "presets": {
+    "slow-cliff": "FvpfixiJ8hfyGxT4Goaww88uG1HJozahPefpD2gQrNfQ",
+    "two-step": "55Q37Jv4EFbf51MbhwFB4hTsdGJoL4W81zmboVhREqgq",
+    "control": "EuXstGa6tHsapVHrs4yG5e7DFfNBkvNPHvwkntcHo44m"
+  },
+  "slowCliff": {
+    "createConfig": "2BZZX3vBCLNDe9m3xBjDysw4c56yVKkuXxbKgPaZMsNta2YSC49taiFoopYncJHb1iHf9CwyoPdYipUkYZMF4jNC",
+    "registerPreset": "4MEJSxrYkahAjPucQqcKnAbWbdDMnetp2ZkaURN6FfNrnZpVDBBaNQwkeLd6gh6c1s1SPxqPeY1BE99MDQLkQxLS",
+    "pool": "B84b2oHAAsF8DCqdNhmagV4XESZS6kimSy552ZBEnZ5f",
+    "launch": "3step6BPMf1geyrZT13yUgGh5crTBzZ87XYRC3FrM54a97Lwty8DQq8oDLviiDSPCH6cajDnWbzvKBXPDLzGy1zD",
+    "outsideBuySlotPlus5": "3ZzQQ2Yv45m1MDMs3AU6WsoCfu18TEEtT9Pj53zsrrYWy1CwoV9rPiLFV7jvB4BFVUtFXjVxQs74zwT9yZPDEmKz",
+    "laterBuy": "49o7PMu6qdQH1c5QWiFKLseMkEVsJLUx2HBVfEfqNaGyQCYYMhYQvpMMxAit5M1vSLATFCCv62fGKwCEFA1rQv8Q",
+    "claimCreationSplit": "ba7s2oq6XsjLBw5bqac3q99R2n538wWS43wEfzhT35P9HgnFvYz5YUy3e61L1XWuyHQ31Lq8Ger5yworj59nxQE",
+    "claimTradingSplit": "2yiYX6TiC9e8JiP7MMPZnAT8d5jA53g97TgupqmFswtcoTsHxASjxULJG7sA5kHzJ35Qo47QpFFyxwL7b12UuCAA",
+    "creatorFirstBuyFeeBps": 100,
+    "outsideBuyFeeBps": 1880,
+    "creationSplitLamports": { "author": 31500000, "treasury": 13500000 },
+    "tradingSplitAtoms": { "author": 28857472, "treasury": 12367488 },
+    "s8": { "decodedPartner": 41224960, "sdkPartnerTotal": 41224960, "equal": true },
+    "i6": true
+  }
+}
