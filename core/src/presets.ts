@@ -8,7 +8,7 @@ import {
 
 export const POOL_CREATION_FEE_SOL = 0.05;
 
-const base = (baseFeeParams: any, enableFirstSwapWithMinFee: boolean) => ({
+const base = (baseFeeParams: any, enableFirstSwapWithMinFee: boolean, poolCreationFee = POOL_CREATION_FEE_SOL) => ({
   token: {
     tokenType: TokenType.SPLToken,
     tokenBaseDecimal: TokenDecimal.SIX,
@@ -22,7 +22,7 @@ const base = (baseFeeParams: any, enableFirstSwapWithMinFee: boolean) => ({
     dynamicFeeEnabled: false,
     collectFeeMode: CollectFeeMode.QuoteToken, // the router claims quote-side fees only
     creatorTradingFeePercentage: 0,
-    poolCreationFee: POOL_CREATION_FEE_SOL,
+    poolCreationFee,
     enableFirstSwapWithMinFee,
   },
   migration: {
@@ -45,7 +45,9 @@ const scheduler = (mode: BaseFeeMode, startingFeeBps: number, endingFeeBps: numb
   feeSchedulerParam: { startingFeeBps, endingFeeBps, numberOfPeriod, totalDuration },
 });
 
-export type PresetDef = { slug: string; name: string; builder: string; summary: string; params: () => ConfigParameters };
+/** `poolCreationFee` in SOL: DBC allows 0 or 0.001–100; mainnet presets use the minimum. */
+export type PresetOpts = { poolCreationFee?: number };
+export type PresetDef = { slug: string; name: string; builder: string; summary: string; params: (o?: PresetOpts) => ConfigParameters };
 
 export const PRESETS: PresetDef[] = [
   {
@@ -53,9 +55,9 @@ export const PRESETS: PresetDef[] = [
     name: "Slow Cliff",
     builder: "buildCurveWithLiquidityWeights",
     summary: "Deeper liquidity at low prices; 50% fee in slot 0 decaying exponentially to 1% over 20 slots; the creator's bundled buy pays the minimum fee.",
-    params: () =>
+    params: (o: PresetOpts = {}) =>
       buildCurveWithLiquidityWeights({
-        ...base(scheduler(BaseFeeMode.FeeSchedulerExponential, 5000, 100, 20, 20), true),
+        ...base(scheduler(BaseFeeMode.FeeSchedulerExponential, 5000, 100, 20, 20), true, o.poolCreationFee),
         initialMarketCap: 30,
         migrationMarketCap: 400,
         // weights fall along the curve: early buys move the price less, so a slot-0 sweep buys less supply per SOL of fee
@@ -67,9 +69,9 @@ export const PRESETS: PresetDef[] = [
     name: "Two-Step",
     builder: "buildCurveWithTwoSegments",
     summary: "Two curve segments; 50% fee in slot 0 falling linearly to 1% over 20 slots; the creator's bundled buy pays the minimum fee.",
-    params: () =>
+    params: (o: PresetOpts = {}) =>
       buildCurveWithTwoSegments({
-        ...base(scheduler(BaseFeeMode.FeeSchedulerLinear, 5000, 100, 20, 20), true),
+        ...base(scheduler(BaseFeeMode.FeeSchedulerLinear, 5000, 100, 20, 20), true, o.poolCreationFee),
         initialMarketCap: 30,
         migrationMarketCap: 400,
         percentageSupplyOnMigration: 20,
@@ -80,9 +82,9 @@ export const PRESETS: PresetDef[] = [
     name: "Control",
     builder: "buildCurve",
     summary: "The default launchpad shape: a flat 1% fee from the first slot, no schedule.",
-    params: () =>
+    params: (o: PresetOpts = {}) =>
       buildCurve({
-        ...base(scheduler(BaseFeeMode.FeeSchedulerLinear, 100, 100, 0, 0), false),
+        ...base(scheduler(BaseFeeMode.FeeSchedulerLinear, 100, 100, 0, 0), false, o.poolCreationFee),
         percentageSupplyOnMigration: 20,
         migrationQuoteThreshold: 85,
       } as any),

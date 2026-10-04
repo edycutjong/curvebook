@@ -100,7 +100,17 @@ export default async function ConfigPage({ params }: Props) {
         <aside>
           {preset ? (
             <div className="box" aria-labelledby="royalty-h">
-              <h3 id="royalty-h">Royalty split</h3>
+              <h3 id="royalty-h">{preset.vault === preset.author ? "Fee claimer" : "Royalty split"}</h3>
+              {preset.vault === preset.author ? (
+                <dl className="facts">
+                  <dt>Partner fees</dt>
+                  <dd>accrue to the author <a href={solscanAccount(preset.author)} target="_blank" rel="noreferrer">{short(preset.author)}</a></dd>
+                  <dt>On-chain split</dt>
+                  <dd>curvebook_router — {process.env.NEXT_PUBLIC_ROUTER_NETWORK ?? "localnet"}</dd>
+                  <dt>Creation fee</dt>
+                  <dd>{sol(config.pool_creation_fee)} SOL</dd>
+                </dl>
+              ) : (
               <dl className="facts">
                 <dt>Author</dt>
                 <dd>{bps(preset.author_bps)} · <a href={solscanAccount(preset.author)} target="_blank" rel="noreferrer">{short(preset.author)}</a></dd>
@@ -111,6 +121,7 @@ export default async function ConfigPage({ params }: Props) {
                 <dt>Creation fee</dt>
                 <dd>{sol(config.pool_creation_fee)} SOL</dd>
               </dl>
+              )}
               <Link className="btn primary" href={`/launch/${preset.slug}`}>Launch on this preset</Link>
             </div>
           ) : (

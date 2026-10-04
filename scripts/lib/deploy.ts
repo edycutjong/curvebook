@@ -18,18 +18,29 @@ export type DeployedPreset = { slug: string; name: string; builder: string; summ
  * a 16-segment curve does not, so register follows in a second one. Both are signed by the config
  * keypair, which only we hold, so nobody can take the author slot in between.
  */
-export async function deployPreset(conn: Connection, payer: Keypair, def: PresetDef, treasury: PublicKey, authorBps: number): Promise<DeployedPreset> {
+export type DeployOpts = {
+  /** "router": fee claimer = curvebook_router vault PDA + register_preset. "wallet": fee claimer = the author's wallet (no router). */
+  claimer?: "router" | "wallet";
+  poolCreationFee?: number;
+};
+
+export async function deployPreset(conn: Connection, payer: Keypair, def: PresetDef, treasury: PublicKey, authorBps: number, o: DeployOpts = {}): Promise<DeployedPreset> {
   const dbc = new DynamicBondingCurveClient(conn, "confirmed");
   const config = Keypair.generate();
-  const vault = vaultPda(config.publicKey);
+  const claimer = o.claimer ?? "router";
+  const vault = claimer === "router" ? vaultPda(config.publicKey) : payer.publicKey;
   const create = await dbc.partner.createConfig({
     config: config.publicKey,
     feeClaimer: vault,
     leftoverReceiver: treasury,
     quoteMint: NATIVE_MINT,
     payer: payer.publicKey,
-    ...def.params(),
+    ...def.params({ poolCreationFee: o.poolCreationFee }),
   });
+  if (claimer === "wallet") {
+    const sig = await send(conn, new Transaction().add(ComputeBudgetProgram.setComputeUnitLimit({ units: 400_000 }), ...create.instructions), [payer, config]);
+    return { slug: def.slug, name: def.name, builder: def.builder, summary: def.summary, config: config.publicKey.toBase58(), vault: vault.toBase58(), sigs: [sig] };
+  }
   const register = registerPresetIx({ author: payer.publicKey, config: config.publicKey, authorBps, treasury });
   const one = new Transaction().add(ComputeBudgetProgram.setComputeUnitLimit({ units: 400_000 }), ...create.instructions, register);
   one.feePayer = payer.publicKey;
@@ -46,8 +57,8 @@ export async function deployPreset(conn: Connection, payer: Keypair, def: Preset
   return { slug: def.slug, name: def.name, builder: def.builder, summary: def.summary, config: config.publicKey.toBase58(), vault: vault.toBase58(), sigs };
 }
 
-export const deployAll = async (conn: Connection, payer: Keypair, treasury: PublicKey, authorBps: number) => {
+export const deployAll = async (conn: Connection, payer: Keypair, treasury: PublicKey, authorBps: number, o: DeployOpts = {}) => {
   const out: DeployedPreset[] = [];
-  for (const def of PRESETS) out.push(await deployPreset(conn, payer, def, treasury, authorBps));
+  for (const def of PRESETS) out.push(await deployPreset(conn, payer, def, treasury, authorBps, o));
   return out;
 };

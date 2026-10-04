@@ -1,6 +1,8 @@
 // Deploy the three Curvebook presets to a cluster and register them with curvebook_router.
 //   KEYPAIR=~/.config/solana/curvebook-deployer.json TREASURY=<pubkey> AUTHOR_BPS=7000 \
 //   RPC_URL=https://api.mainnet-beta.solana.com npx tsx scripts/deploy-presets.ts
+// CLAIMER=wallet  → the author's wallet is the DBC fee claimer and no router is needed (≈ 0.03 SOL for 3 configs).
+// POOL_CREATION_FEE=0.001 → creation fee per launch in SOL (DBC minimum 0.001; default 0.05).
 // Writes fixtures/presets.<cluster>.json and upserts the `presets` table when DATABASE_URL is set.
 import { writeFileSync } from "node:fs";
 import { homedir } from "node:os";
@@ -16,14 +18,18 @@ const treasury = new PublicKey(process.env.TREASURY ?? payer.publicKey);
 const authorBps = Number(process.env.AUTHOR_BPS ?? 7000);
 const conn = new Connection(rpc, "confirmed");
 
-const router = await conn.getAccountInfo(ROUTER_PROGRAM_ID);
-if (!router?.executable) throw new Error(`curvebook_router ${ROUTER_PROGRAM_ID.toBase58()} is not deployed on ${cluster}`);
+const claimer = (process.env.CLAIMER ?? "router") as "router" | "wallet";
+const poolCreationFee = process.env.POOL_CREATION_FEE ? Number(process.env.POOL_CREATION_FEE) : undefined;
+if (claimer === "router") {
+  const router = await conn.getAccountInfo(ROUTER_PROGRAM_ID);
+  if (!router?.executable) throw new Error(`curvebook_router ${ROUTER_PROGRAM_ID.toBase58()} is not deployed on ${cluster}`);
+}
 const balance = await conn.getBalance(payer.publicKey);
 console.log(`${cluster}: payer ${payer.publicKey.toBase58()} holds ${balance / LAMPORTS_PER_SOL} SOL`);
-if (balance < 0.1 * LAMPORTS_PER_SOL) throw new Error("fund the payer with ≥ 0.1 SOL first (3 configs + 3 presets ≈ 0.05 SOL rent)");
+if (balance < 0.05 * LAMPORTS_PER_SOL) throw new Error("fund the payer with ≥ 0.05 SOL first (3 configs ≈ 0.03 SOL rent)");
 
-const presets = await deployAll(conn, payer, treasury, authorBps);
-const out = { cluster, router: ROUTER_PROGRAM_ID.toBase58(), author: payer.publicKey.toBase58(), treasury: treasury.toBase58(), authorBps, presets };
+const presets = await deployAll(conn, payer, treasury, authorBps, { claimer, poolCreationFee });
+const out = { cluster, claimer, poolCreationFee: poolCreationFee ?? 0.05, router: claimer === "router" ? ROUTER_PROGRAM_ID.toBase58() : null, author: payer.publicKey.toBase58(), treasury: treasury.toBase58(), authorBps, presets };
 writeFileSync(`fixtures/presets.${cluster}.json`, JSON.stringify(out, null, 2) + "\n");
 for (const p of presets) console.log(`${p.name.padEnd(10)} ${p.config}  ${p.sigs.join(" ")}`);
 
