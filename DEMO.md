@@ -23,6 +23,17 @@ First ~30 minutes of capture, slots 453,070,248 → 453,074,746 (4,498 slots):
 | Worst window | **90.7%**: pool [`BZRdad…W2Gf`](https://solscan.io/account/BZRdadeK8G3ScYeoPCKReXPNgrxQ48qPysK3jSPmW2Gf), [create tx](https://solscan.io/tx/5geVVHpQ79bTT2e1FVN2X9t6jggfG1nPagVNjSFPcPa1M7KZ3Lr2Fzcs8Wi2BjeShb3ScBfunfKxMnDHspjzs5YH). One wallet bought it in slot 0 for 9.208 SOL ([tx](https://solscan.io/tx/2xwpzmLa2fPScTxXoAetw6sw5XKRfYchrLbJvQkvnC19Y5toWm9GhvHgxNrWL35zJEj2zeV1EKfuhr9gQUiDSbCt)). A second pool on the same config, [`HUjBHy…Vjen`](https://solscan.io/account/HUjBHy2J5KcMuBsPdMX4LZvP2s7NbDR5sshZYF1cjVen), shows the same 90.7%. Their config's readout: "Flat 0.25% fee from the first slot. No anti-sniper schedule." |
 | RPC retries | 1, absorbed (two keyless endpoints with per-endpoint backoff) |
 
+Every buy in that window (from the committed snapshot; share = base bought ÷ the config's `swap_base_amount`):
+
+| Slot | Wallet | In | Of curve |
+|---|---|---|---|
+| +0 | `61VF…B82L` | 9.208 SOL | 90.6% |
+| +2 | `FheT…ecQF` | 0.004 SOL | 0.02% |
+| +2 | `AKof…MzsY` | 0.01 SOL | 0.05% |
+| +6 | `BotV…dBot` | 0.001 SOL | <0.01% |
+| +8 | `7CHA…Jc9f` | 0.0103 SOL | 0.05% |
+| +8 | `FGDc…hSLv` | 0.005 SOL | 0.02% |
+
 "Outside" means *not the creator's signing key*. A wallet the creator funded counts as outside: SNP10 measures what left the creator's
 hands in the first ten slots, not intent. No config had 20 windows from 5 creators yet, so nothing was ranked; the Form says so.
 
