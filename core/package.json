@@ -10,7 +10,8 @@
   },
   "scripts": {
     "test": "vitest run",
-    "typecheck": "tsc -p ."
+    "typecheck": "tsc -p .",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.31.1",
@@ -22,6 +23,7 @@
   },
   "devDependencies": {
     "@types/bn.js": "^5.1.6",
+    "@vitest/coverage-v8": "^3.2.7",
     "fast-check": "^4.10.2",
     "tsx": "^4.23.15",
     "vitest": "^3.2.0"

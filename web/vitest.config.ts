@@ -5,7 +5,12 @@ export default defineConfig({
   resolve: { alias: { "@": fileURLToPath(new URL(".", import.meta.url)) } },
   test: {
     include: ["test/**/*.test.ts"],
-    // Unit scope is the pure lib/ layer; pages, routes and DB access are covered by e2e/.
-    coverage: { provider: "v8", include: ["lib/**/*.ts"], exclude: ["lib/db.ts", "lib/queries.ts"], reporter: ["text", "html"] },
+    // Unit scope is lib/ (including DB access, with Postgres mocked); pages and routes are covered by e2e/.
+    coverage: {
+      provider: "v8",
+      include: ["lib/**/*.ts"],
+      reporter: ["text", "json-summary"],
+      thresholds: { lines: 100, functions: 100, branches: 100, statements: 100 },
+    },
   },
 });
