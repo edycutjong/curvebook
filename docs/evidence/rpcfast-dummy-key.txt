@@ -1,0 +1,7 @@
+# 2026-10-08T21:32:18.436Z dummy key (64 zeros) against RPC Fast; curvebook worker code at HEAD
+JSON-RPC solana-rpc.rpcfast.com without x-token -> HTTP 401
+Rpc with dummy x-token -> fellBack=true, now api.mainnet-beta.solana.com, getSlot=454665730
+gRPC solana-yellowstone-grpc.rpcfast.com +0.8s gRPC stream error: 7 PERMISSION_DENIED: {"allowed":false,"reason":"unknown_token"}; reconnecting from slot 0
+gRPC solana-yellowstone-grpc.rpcfast.com +2.0s gRPC stream error: 7 PERMISSION_DENIED: {"allowed":false,"reason":"unknown_token"}; reconnecting from slot 0
+gRPC solana-yellowstone-grpc.rpcfast.com +4.2s giving up on gRPC: the endpoint rejected the token 3 times (error: 7 PERMISSION_DENIED: {"allowed":false,"reason":"unknown_token"})
+onAuthFailure after 4.2s -> worker switches to keyless logsSubscribe

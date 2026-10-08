@@ -75,7 +75,7 @@ worst gave up **90.7%** of its curve in slot 0 ([DEMO.md](DEMO.md)).
 | Layer | What | Where |
 |---|---|---|
 | Decode | DBC event-CPI → `EvtInitializePool` / `EvtSwap2` / `EvtCurveComplete` + payer pairing; v0 and v1 transactions | [`core/src/decode.ts`](core/src/decode.ts) |
-| Index | public `logsSubscribe` + crawl (the live deployment), or an optional Yellowstone gRPC adapter with `from_slot` replay; windows finalized from confirmed signatures | [`worker/`](worker/src) |
+| Index | RPC Fast Yellowstone gRPC with `from_slot` replay (the live deployment), keyless `logsSubscribe` fallback; windows finalized from confirmed signatures | [`worker/`](worker/src) |
 | Rank | SNP10 median, p90, seeded 1,000-resample bootstrap CI, D9 eligibility, tie when CIs overlap | [`core/src/stats.ts`](core/src/stats.ts) |
 | Launch | `buildLaunchTx`: `getPoolConfig` → `getQuoteFromInputAmount` → `createPoolWithFirstBuy` → v0 tx | [`core/src/launch.ts`](core/src/launch.ts) |
 | Land | relay guard (message hash issued + single use) → simulate → RPC send (optional Beam adapter) → same-bytes resend | [`worker/src/lander.ts`](worker/src/lander.ts) |
@@ -114,13 +114,13 @@ Reproduce the numbers: `pnpm proof` (snapshot → offline recompute → 20 sampl
 
 ## 🧪 Testing & CI
 
-**697 tests, with 100% statement, branch, function and line coverage** on every `core`, `worker` and `web/lib` source file (thresholds enforced in CI; pages and routes are covered by the e2e suite), plus property checks over
+**703 tests, with 100% statement, branch, function and line coverage** on every `core`, `worker` and `web/lib` source file (thresholds enforced in CI; pages and routes are covered by the e2e suite), plus property checks over
 **30,000 random windows** and **20,000 random fee schedules × 10 slots** (our formula equals the Meteora SDK's own scheduler at every point):
 
 | Suite | Count | Coverage | What it pins |
 |---|---|---|---|
 | core (vitest) | 171 | 100% | decoding real mainnet txs (incl. CPI-routed and v1), SNP10 window, Form stats, SDK toll quotes for every preset, launch builder, router client, properties |
-| worker (vitest) | 245 | 100% | crawl paging, indexer finalize paths, gRPC ≡ RPC decode on real fixtures, relay permission boundary, lander, RPC backoff, HTTP API, defect-named regressions |
+| worker (vitest) | 251 | 100% | crawl paging, indexer finalize paths, gRPC ≡ RPC decode on real fixtures, relay permission boundary, lander, RPC backoff, HTTP API, defect-named regressions |
 | web lib (vitest) | 254 | 100% | formatters, strip scaling, Form grouping, launch validation, DB queries (Postgres mocked) |
 | program (Rust) | 8 | — | I2 split exactness incl. a 100k-case sweep, DBC discriminators and PDAs |
 | program (localnet, real DBC binary) | 19 | — | invariants I1–I6, every negative path |
