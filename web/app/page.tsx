@@ -68,7 +68,7 @@ export default async function FormPage() {
       <section aria-labelledby="presets-h">
         <div className="section-head">
           <h2 id="presets-h">Curvebook presets</h2>
-          <p>Configs whose fee claimer is the curvebook_router vault</p>
+          <p>Anti-sniper configs published by Curvebook; launch fees pay the preset&rsquo;s author</p>
         </div>
         {presets.length > 0 ? (
           <FormTable rows={presets} ranked caption="Curvebook presets" />

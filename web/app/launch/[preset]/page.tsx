@@ -54,9 +54,18 @@ export default async function LaunchPage({ params }: Props) {
           {fee == null
             ? "Pool creation fee: not read yet."
             : `Pool creation fee: ${sol(fee)} SOL.`}{" "}
-          Fees claimed by this preset&rsquo;s router vault{" "}
-          <a href={solscanAccount(preset.vault)} target="_blank" rel="noreferrer" className="mono">{short(preset.vault)}</a> split{" "}
-          {bps(preset.author_bps)} to the author and {bps(10_000 - preset.author_bps)} to the treasury.
+          {preset.vault === preset.author ? (
+            <>
+              Partner fees go to the preset&rsquo;s author{" "}
+              <a href={solscanAccount(preset.author)} target="_blank" rel="noreferrer" className="mono">{short(preset.author)}</a>.
+            </>
+          ) : (
+            <>
+              Fees claimed by this preset&rsquo;s router vault{" "}
+              <a href={solscanAccount(preset.vault)} target="_blank" rel="noreferrer" className="mono">{short(preset.vault)}</a> split{" "}
+              {bps(preset.author_bps)} to the author and {bps(10_000 - preset.author_bps)} to the treasury.
+            </>
+          )}
         </p>
       </div>
       <Providers>

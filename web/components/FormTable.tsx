@@ -33,7 +33,7 @@ export function FormTable({ rows, caption, ranked }: { rows: FormRow[]; caption:
               <Link href={`/config/${r.config}`} title={r.config}>
                 {r.preset ? r.preset.name : short(r.config)}
               </Link>
-              {r.preset && <span className="star" title="Curvebook preset: fees route through the curvebook_router split">★ CURVEBOOK</span>}
+              {r.preset && <span className="star" title="Curvebook preset: launch fees pay the preset's author">★ CURVEBOOK</span>}
               {r.preset && <span className="sub">{short(r.config)}</span>}
             </td>
             <td className="num">{r.launches}</td>
