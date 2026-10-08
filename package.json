@@ -10,7 +10,8 @@
     "worker": "pnpm --filter @curvebook/worker start",
     "web": "pnpm --filter @curvebook/web dev",
     "test:program": "cd program && pnpm test",
-    "rehearse": "tsx scripts/rehearse-localnet.ts"
+    "rehearse": "tsx scripts/rehearse-localnet.ts",
+    "bench": "tsx scripts/bench.ts"
   },
   "devDependencies": {
     "@types/bn.js": "^5.2.0",

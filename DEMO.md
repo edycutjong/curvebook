@@ -3,6 +3,37 @@
 Everything below came from a real run. Mainnet numbers come from the live index; localnet numbers come from the real Meteora DBC
 binary dumped from mainnet and run on a local validator. Each section says which it is.
 
+## 0. Live benchmark — `pnpm bench` (2026-10-08 22:51 UTC)
+
+**Headline: a launch's 10-slot record is public 14 s after its 10th slot (p50; p95 16 s, n = 30).**
+That is the live worker on RPC Fast's Yellowstone gRPC, including the deliberate wait to re-read each window from
+confirmed signatures before publishing it.
+
+Reproduce (no keys, no local services; it measures the live deployment): `pnpm install && pnpm bench`
+
+| scenario | n | p50 | p95 | max |
+|---|---|---|---|---|
+| window public after its 10th slot (s) | 30 | 14 | 16 | 18 |
+| GET /api/pool/:address (ms) | 30 | 338 | 538 | 556 |
+| GET /api/config/:address (ms) | 30 | 567 | 663 | 667 |
+| GET /api/form (ms) | 30 | 1610 | 2250 | 2309 |
+
+Relay attack checks against the live launch endpoint (each is also a named unit test,
+`worker/test/boundaries.test.ts` "relay boundary"):
+
+| legitimate-looking wrong input | expected | live answer |
+|---|---|---|
+| a correctly signed v0 transaction the relay never issued | refuse (403) | 403 "unknown or expired launch transaction; rebuild it" |
+| oversized payload (> 4,000 chars) | refuse (400) | 400 |
+
+Methodology: seed 42 picks which windows, pools and configs are sampled; 3 warm-up requests per API are discarded;
+requests run one at a time from a single client (Jakarta → Vercel). Freshness = `seen_at` on the public events feed
+minus the block time of the window's last slot (public RPC `getBlockTime`, 1-second resolution), sampled from the
+windows in the latest 500 events, so it reflects the current deployment only. The script exits 1 if any page is not
+HTTP 200, any SNP10 is outside [0, 1], a freshness value is implausible (≤ 0 or ≥ 600 s), or the relay accepts an
+attack input. Not measured: concurrent load (see shipcheck notes), and the landing path of a real launch (§1b has the
+signatures; one launch per preset is a demonstration, not a latency sample).
+
 ## 1. Live mainnet index (keyless, first capture run — 2026-10-04)
 
 ```bash

@@ -109,7 +109,8 @@ pnpm web                                # http://localhost:3000
 ```
 Optional: `cp .env.example .env` and set `GRPC_URL` / `GRPC_TOKEN` (any Yellowstone gRPC provider; we use RPC Fast) and `RPC_URL` / `RPC_TOKEN`. On-chain: `cd program && pnpm install && pnpm test`.
 
-Reproduce the numbers: `pnpm proof` (snapshot → offline recompute → 20 sampled buys re-fetched from mainnet). Rehearse the launch path:
+Reproduce the numbers: `pnpm proof` (snapshot → offline recompute → 20 sampled buys re-fetched from mainnet). Benchmark the live
+deployment: `pnpm bench` (window freshness p50 14 s / p95 16 s, API p50/p95, relay attack checks; [DEMO.md §0](DEMO.md)). Rehearse the launch path:
 `bash scripts/localnet.sh` then `pnpm rehearse`.
 
 ## 🧪 Testing & CI
