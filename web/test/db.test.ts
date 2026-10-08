@@ -31,8 +31,10 @@ describe("sql client construction", () => {
     const [url, opts] = postgresMock.mock.calls[0] as [string, Record<string, unknown>];
     expect(url).toBe("postgres://curvebook:curvebook@localhost:5433/curvebook");
     expect(opts.ssl).toBe(false);
-    expect(opts.max).toBe(5);
-    expect(opts.idle_timeout).toBe(20);
+    expect(opts.max).toBe(2);
+    expect(opts.idle_timeout).toBe(5);
+    expect(opts.max_lifetime).toBe(300);
+    expect(opts.connection).toEqual({ idle_session_timeout: 30_000 });
     expect((opts.types as { bigint: unknown }).bigint).toBe("BIGINT_MARKER");
     expect(sql).toEqual({ __fakeSql: true, url, opts });
   });

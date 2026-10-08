@@ -5,13 +5,20 @@ const url = process.env.DATABASE_URL ?? "postgres://curvebook:curvebook@localhos
 const local = /@(localhost|127\.0\.0\.1|\[::1\])[:/]/.test(url);
 
 // One pool per server process; dev hot reload would otherwise leak connections.
+// On Vercel every function instance holds its own pool, and a frozen instance never runs its
+// client-side idle timer, so its connections sat idle for minutes (89 of Postgres's 100 on
+// 2026-10-09) and a burst of page loads failed with 53300 "too many clients". Keep pools small,
+// and have the server end any web connection idle for 30 s (idle_session_timeout is per session:
+// the worker's long-lived advisory-lock connection is not affected).
 const g = globalThis as unknown as { __cbSql?: postgres.Sql };
 export const sql =
   g.__cbSql ??
   (g.__cbSql = postgres(url, {
     ssl: local ? false : "require",
-    max: 5,
-    idle_timeout: 20,
+    max: 2,
+    idle_timeout: 5,
+    max_lifetime: 300,
+    connection: { idle_session_timeout: 30_000 },
     types: { bigint: postgres.BigInt },
   }));
 
