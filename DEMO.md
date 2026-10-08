@@ -160,5 +160,4 @@ WEB=http://localhost:3001 npx tsx scripts/e2e-launch.ts
 
 ## 5. What is not on mainnet yet
 - `curvebook_router` on mainnet: it runs on devnet (section 3b). The mainnet presets (section 1b) use the author's wallet as fee claimer; moving the router to mainnet needs ≈ 1.6 SOL of refundable program rent.
-- Solami gRPC + Beam: wired (`worker/src/sources/grpc.ts`, `worker/src/lander.ts`) and switched on by `SOLAMI_RPC_TOKEN` / `SOLAMI_SWQOS_KEY`.
-  The gRPC decoder is tested to produce exactly the events `getTransaction` produces on real mainnet fixtures.
+- Beam landing: wired (`worker/src/lander.ts`) and switched on by `SOLAMI_SWQOS_KEY`; launches land with plain `sendTransaction` today.

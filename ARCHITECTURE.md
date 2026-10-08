@@ -9,8 +9,8 @@ flowchart LR
     R[curvebook_router\nvault PDA = fee_claimer]
   end
   subgraph src[Data sources]
-    G[optional: Solami Yellowstone gRPC\nfrom_slot replay · off in the live deployment]
-    L[live source\nlogsSubscribe + public RPC]
+    G[RPC Fast Yellowstone gRPC\nfrom_slot replay · switching on]
+    L[live source until the switch\nlogsSubscribe + public RPC]
   end
   subgraph worker[worker · Node 22]
     IX[indexer\ndecode EvtInitializePool / EvtSwap2\npayer = parent swap ix]
@@ -36,7 +36,7 @@ flowchart LR
 |---|---|
 | `core/` | Pure TypeScript shared by everything: DBC event-CPI decoder with payer pairing (`decode.ts`), PoolConfig decoding and the SDK-exact fee scheduler (`config.ts`), plain-language readout (`describe.ts`), the 10-slot window and SNP10 (`window.ts`), Form statistics with seeded bootstrap CIs (`stats.ts`), `buildLaunchTx` (`launch.ts`), preset definitions (`presets.ts`), router client (`router.ts`) |
 | `program/` | `curvebook_router` Anchor program — see `docs/AUDIT-SCOPE.md` |
-| `worker/` | Long-lived indexer + lander. Two sources (keyless logs, live; optional Solami gRPC), one finalization path, aggregator, `/beam` + `/health` HTTP |
+| `worker/` | Long-lived indexer + lander. Two sources (keyless logs, live; RPC Fast Yellowstone gRPC, switching on), one finalization path, aggregator, `/beam` + `/health` HTTP |
 | `web/` | Next.js App Router UI and API routes |
 | `scripts/` | `pnpm proof` chain, preset deploy, claim crank, localnet rehearsal, spikes |
 | `db/schema.sql` | The whole schema; the worker applies it on start |

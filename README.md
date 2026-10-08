@@ -91,10 +91,11 @@ Diagram and design notes: [ARCHITECTURE.md](ARCHITECTURE.md).
 `deriveDbcPoolAddress`, `deriveDbcTokenVaultAddress`, plus on-chain CPI of `claim_trading_fee` and `claim_partner_pool_creation_fee`, and event
 decoding against IDL 0.2.1. Friction we hit is written up in [docs/DX-REPORT.md](docs/DX-REPORT.md).
 
-**The live deployment is keyless.** It discovers launches from public `logsSubscribe`, re-reads every window from confirmed signatures,
-and lands launches with plain `sendTransaction`. An optional Solami adapter is in the code but **not used live**: Yellowstone gRPC with
-`fromSlot()` replay ([`grpc.ts`](worker/src/sources/grpc.ts)) and Beam landing ([`lander.ts`](worker/src/lander.ts)), switched on by
-`SOLAMI_RPC_TOKEN` / `SOLAMI_SWQOS_KEY`. Its decoding is tested against the same fixtures as the RPC path; it has not been run against mainnet.
+**The live worker is moving to [RPC Fast](https://rpcfast.com).** The gRPC source streams every DBC transaction over Yellowstone gRPC,
+with `from_slot` replay on reconnect so the stream has no gaps ([`grpc.ts`](worker/src/sources/grpc.ts)); its decoder is tested to produce
+exactly the events `getTransaction` produces on real mainnet fixtures. RPC Fast provides the gRPC endpoint and RPC on its Hackathon plan, and
+the live worker switches over once they are configured. Until then it runs keyless: public `logsSubscribe` plus confirmed signatures.
+Launches land with plain `sendTransaction`; an optional Beam landing adapter ([`lander.ts`](worker/src/lander.ts)) is off.
 
 ## 🚀 Getting started
 
@@ -104,14 +105,14 @@ docker compose up -d db                 # Postgres 16 on :5433
 pnpm worker                             # live mainnet index, no keys needed
 pnpm web                                # http://localhost:3000
 ```
-Optional: `cp .env.example .env` and add a Solami token for gRPC + Beam. On-chain: `cd program && pnpm install && pnpm test`.
+Optional: `cp .env.example .env` and set `GRPC_URL` / `GRPC_TOKEN` (any Yellowstone gRPC provider; we use RPC Fast) and `RPC_URL`. On-chain: `cd program && pnpm install && pnpm test`.
 
 Reproduce the numbers: `pnpm proof` (snapshot → offline recompute → 20 sampled buys re-fetched from mainnet). Rehearse the launch path:
 `bash scripts/localnet.sh` then `pnpm rehearse`.
 
 ## 🧪 Testing & CI
 
-**680 tests, with 100% statement, branch, function and line coverage** on every `core`, `worker` and `web/lib` source file (thresholds enforced in CI; pages and routes are covered by the e2e suite), plus property checks over
+**677 tests, with 100% statement, branch, function and line coverage** on every `core`, `worker` and `web/lib` source file (thresholds enforced in CI; pages and routes are covered by the e2e suite), plus property checks over
 **30,000 random windows** and **20,000 random fee schedules × 10 slots** (our formula equals the Meteora SDK's own scheduler at every point):
 
 | Suite | Count | Coverage | What it pins |
@@ -149,4 +150,4 @@ docs/       AUDIT-SCOPE, DX-REPORT, spike notes, images
 [MIT](LICENSE) © 2026 Edy Cu
 
 ## 🙏 Acknowledgments
-Built for Colosseum World's Fair 2026. Thanks to Meteora for DBC and its SDK, and to Solami for the SDK behind the optional gRPC/Beam adapter.
+Built for Colosseum World's Fair 2026. Thanks to Meteora for DBC and its SDK, and to RPC Fast for the Hackathon plan (Yellowstone gRPC + RPC) the live indexer is moving onto.
