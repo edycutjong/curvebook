@@ -50,7 +50,7 @@
   <img src="docs/img/launch.gif" alt="A real mainnet launch on the Slow Cliff preset: sign, land, then the ten slot cells fill with confirmed ticks and 0 outside buys" width="100%">
 </div>
 
-> *Below the fold of that story: a real mainnet launch on the Slow Cliff preset (pool `7P2gx…wRUb`, 8 Oct 2026), filmed through the app.
+> *And the other side of it: a real mainnet launch on the Slow Cliff preset (pool `7P2gx…wRUb`, 8 Oct 2026), filmed through the app.
 > Sign → landed → receipt, then the window confirms: 0 outside buys, SNP10 0%. Speed-ups are labelled in the clip
 > (×2 while landing, ×5 while waiting for slot 10); the fill itself is real time. Full run with sound: [demo video (2:39)](https://youtu.be/DGLbhdIFg8Q).*
 
