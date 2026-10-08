@@ -92,7 +92,12 @@ worker relay lands it (`scripts/launch.ts`). Windows finalized by the live index
 On Control, the partner fee claimed (480,000 lamports) is exactly 80% of the 600,000 lamports of fees paid in that pool (the creator's
 100,000 + the outside buyer's 500,000): the same partner-share identity (S8) checked on localnet and devnet, now on mainnet.
 One launch per preset is a demonstration, not a statistic; the presets enter the Form's ranking only at ≥ 20 windows from ≥ 5 creators.
-All three launches are the author's own (`third_party = false`). Third-party launches: 0 so far.
+A fourth launch, filmed end to end through the web app for the demo video (2026-10-08, landed slot 454,449,863): Slow Cliff,
+pool [`7P2gxd…wRUb`](https://solscan.io/account/7P2gxdR9f9CENSF5z2QNstKb2EDLVxNqEWuY34D9wRUb) ·
+[launch](https://solscan.io/tx/aBGU8YmCZ5S7u4RafLg1zH8qNCgzSu7t2dEYjdcDsR8BvmdwsWCRs7V8BVgUxuxkQomM1rGF8xHi5DJvdpiCZQh) ·
+[receipt](https://curvebook.edycu.dev/pool/7P2gxdR9f9CENSF5z2QNstKb2EDLVxNqEWuY34D9wRUb): SNP10 0%, only the creator's buy in the first ten slots.
+
+All four launches are the author's own (`third_party = false`). Third-party launches: 0 so far.
 
 ## 2. `pnpm proof` — the number chain
 

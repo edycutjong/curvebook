@@ -127,7 +127,7 @@ pnpm rehearse`}</pre>
           <h2 id="limits-h">Honest limitations</h2>
         </div>
         <ul className="readout">
-          <li>The three presets are live on mainnet with one own launch each (DEMO.md §1b); the router that splits their fees runs on devnet (DEMO.md §3b), not on mainnet yet.</li>
+          <li>The three presets are live on mainnet with four own launches between them (DEMO.md §1b); the router that splits their fees runs on devnet (DEMO.md §3b), not on mainnet yet.</li>
           <li>The index covers only launches since capture start; nothing earlier is backfilled.</li>
           <li>Creator-funded sybil wallets count as outsiders.</li>
           <li>The live worker streams from RPC Fast Yellowstone gRPC since 8 Oct 2026 21:09 UTC; before that it ran keyless on public RPC.</li>

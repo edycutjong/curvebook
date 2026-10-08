@@ -150,13 +150,14 @@ program/    curvebook_router (Anchor) + localnet tests against the real DBC prog
 scripts/    proof chain, preset deploy, claim crank, localnet rehearsal, e2e launch, spikes
 db/         schema.sql
 fixtures/   committed mainnet snapshot + rehearsal output
-docs/       AUDIT-SCOPE, DX-REPORT, spike notes, images
+docs/       AUDIT-SCOPE, DX-REPORT, MARKET, spike notes, images
 ```
 
 ## 🧭 Status, honestly
 
-- The index runs live on mainnet, and the three presets are **live on mainnet** with one own launch each ([DEMO.md §1b](DEMO.md)). `curvebook_router` runs on **devnet**, where the full launch → claim → on-chain split path is on the explorer ([DEMO.md §3b](DEMO.md)); it is not on mainnet yet (≈ 1.6 SOL of refundable rent).
+- The index runs live on mainnet, and the three presets are **live on mainnet** with four own launches between them and none by anyone else yet ([DEMO.md §1b](DEMO.md)). `curvebook_router` runs on **devnet**, where the full launch → claim → on-chain split path is on the explorer ([DEMO.md §3b](DEMO.md)); it is not on mainnet yet (≈ 1.6 SOL of refundable rent).
 - The index covers launches since capture start. There is no backfill: gRPC replay reaches ~23 minutes back, by design.
+- Market and unit economics measured from the index (≈ 5,200 SOL-quoted DBC launches a day; 35 launchpads ran 100+ in under five days; lower-bound fee math per preset share): [docs/MARKET.md](docs/MARKET.md).
 - Pre-existing code: none. This repository was started on 2026-10-04 for Colosseum World's Fair.
 
 ## 📄 License
