@@ -18,6 +18,8 @@ export async function Header() {
           <Link href="/integrations/verify">Verify</Link>
           <Link href="/about">Method</Link>
           <Link href="/judge">Judges</Link>
+          {/* static pages served from public/landing via next.config rewrites, so plain anchors */}
+          <a href="/pitch">Deck</a>
         </nav>
         <LiveDot initial={{ slot: health?.last_slot ?? null, lag: health?.lag_slots ?? null, updatedAt: health?.updated_at ?? null }} />
       </div>

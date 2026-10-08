@@ -6,3 +6,6 @@ blob-report/
 .lighthouseci/
 coverage/
 .next-*/
+
+# generated from ../docs by scripts/copy-landing.mjs
+public/landing/
