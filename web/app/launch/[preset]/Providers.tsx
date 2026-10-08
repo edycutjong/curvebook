@@ -2,7 +2,7 @@
 import { useMemo } from "react";
 import { ConnectionProvider, WalletProvider } from "@solana/wallet-adapter-react";
 import { WalletModalProvider } from "@solana/wallet-adapter-react-ui";
-import "@solana/wallet-adapter-react-ui/styles.css";
+import "./wallet-adapter.css";
 
 // wallets=[]: Phantom, Solflare and other Wallet Standard wallets register themselves.
 export function Providers({ children }: { children: React.ReactNode }) {
