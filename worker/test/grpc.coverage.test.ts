@@ -4,51 +4,31 @@ import { DBC_PROGRAM_ID } from "@curvebook/core";
 import type { Indexer } from "../src/indexer.js";
 import { yellowstoneToRawTx } from "../src/sources/grpc.js";
 
-// Shared mock state for the "solami" module, built once via vi.hoisted so the
+// Shared mock state for the "@triton-one/yellowstone-grpc" module, built once via vi.hoisted so the
 // vi.mock factory below (which is hoisted above imports) can close over it.
 const h = vi.hoisted(() => {
-  const streams: EventEmitter[] = [];
-  const subBuilders: Array<{ calls: any[] }> = [];
+  const streams: Array<EventEmitter & { write: (req: any) => void; req?: any }> = [];
+  const ctorArgs: any[][] = [];
 
-  const subscribe = vi.fn(async (_req: any) => {
-    const s = new EventEmitter();
+  const subscribe = vi.fn(async () => {
+    const s = Object.assign(new EventEmitter(), { req: undefined as any, write(req: any) { s.req = req; } });
     streams.push(s);
     return s;
   });
-  const grpcClient = { subscribe };
-  const buildFn = vi.fn(async () => ({ grpc: () => grpcClient }));
-  const withGrpc = vi.fn((_token: string) => ({ build: buildFn }));
-  const builderFn = vi.fn(() => ({ withGrpc }));
 
-  class SubscriptionBuilder {
-    calls: any[] = [];
-    constructor() {
-      subBuilders.push(this);
+  class Client {
+    constructor(...args: any[]) {
+      ctorArgs.push(args);
     }
-    transactions(label: string, filter: any) {
-      this.calls.push({ m: "transactions", label, filter });
-      return this;
-    }
-    commitment(level: any) {
-      this.calls.push({ m: "commitment", level });
-      return this;
-    }
-    fromSlot(slot: any) {
-      this.calls.push({ m: "fromSlot", slot });
-      return this;
-    }
-    build() {
-      return { calls: this.calls };
-    }
+    subscribe = subscribe;
   }
 
-  return { streams, subBuilders, subscribe, grpcClient, buildFn, withGrpc, builderFn, SubscriptionBuilder };
+  return { streams, ctorArgs, subscribe, Client };
 });
 
-vi.mock("solami", () => ({
-  builder: h.builderFn,
-  CommitmentLevel: { PROCESSED: "processed" },
-  SubscriptionBuilder: h.SubscriptionBuilder,
+vi.mock("@triton-one/yellowstone-grpc", () => ({
+  default: h.Client,
+  CommitmentLevel: { PROCESSED: 0 },
 }));
 
 const { startGrpc } = await import("../src/sources/grpc.js");
@@ -80,17 +60,8 @@ function minimalUpdate() {
 
 beforeEach(() => {
   h.streams.length = 0;
-  h.subBuilders.length = 0;
+  h.ctorArgs.length = 0;
   h.subscribe.mockClear();
-  h.subscribe.mockImplementation(async (_req: any) => {
-    const s = new EventEmitter();
-    h.streams.push(s);
-    return s;
-  });
-  h.buildFn.mockClear();
-  h.buildFn.mockImplementation(async () => ({ grpc: () => h.grpcClient }));
-  h.withGrpc.mockClear();
-  h.builderFn.mockClear();
 });
 
 afterEach(() => {
@@ -123,38 +94,39 @@ describe("yellowstoneToRawTx — missing-field branches", () => {
 });
 
 describe("startGrpc", () => {
-  it("builds the Solami client from the token and subscribes with the DBC transactions filter at PROCESSED commitment", async () => {
+  it("builds the client from the endpoint and x-token and subscribes with the DBC transactions filter at PROCESSED commitment", async () => {
     const ix = fakeIndexer(0, 0);
     const log = vi.fn();
-    await startGrpc(ix, "tok-123", log);
+    await startGrpc(ix, "https://grpc.example", "tok-123", log);
 
-    expect(h.builderFn).toHaveBeenCalledTimes(1);
-    expect(h.withGrpc).toHaveBeenCalledWith("tok-123");
-    expect(h.subBuilders).toHaveLength(1);
-    const calls = h.subBuilders[0].calls;
-    expect(calls[0]).toEqual({
-      m: "transactions",
-      label: "dbc",
-      filter: { accountInclude: [DBC_PROGRAM_ID], accountExclude: [], accountRequired: [], vote: false, failed: false },
+    expect(h.ctorArgs).toEqual([["https://grpc.example", "tok-123", undefined]]);
+    const req = h.streams[0].req;
+    expect(req.transactions).toEqual({
+      dbc: { accountInclude: [DBC_PROGRAM_ID], accountExclude: [], accountRequired: [], vote: false, failed: false },
     });
-    expect(calls[1]).toEqual({ m: "commitment", level: "processed" });
-    // no fromSlot call when lastSlot is 0
-    expect(calls.find((c) => c.m === "fromSlot")).toBeUndefined();
+    expect(req.commitment).toBe(0);
+    // no fromSlot when lastSlot is 0
+    expect(req.fromSlot).toBeUndefined();
+  });
+
+  it("passes no x-token when the token is empty", async () => {
+    await startGrpc(fakeIndexer(0, 0), "https://grpc.example", "", vi.fn());
+    expect(h.ctorArgs[0][1]).toBeUndefined();
   });
 
   it("does not replay from a slot when lastSlot has already caught up to chainSlot (gap <= 0)", async () => {
     const ix = fakeIndexer(100, 100);
     const log = vi.fn();
-    const result = await startGrpc(ix, "tok", log);
-    expect(h.subBuilders[0].calls.find((c) => c.m === "fromSlot")).toBeUndefined();
+    const result = await startGrpc(ix, "https://grpc.example", "tok", log);
+    expect(h.streams[0].req.fromSlot).toBeUndefined();
     expect(result.lastFromSlot()).toBeNull();
   });
 
   it("replays from lastSlot when the gap is within the replay limit", async () => {
     const ix = fakeIndexer(1_000, 500); // gap = 500, within 3500
     const log = vi.fn();
-    const result = await startGrpc(ix, "tok", log);
-    expect(h.subBuilders[0].calls.find((c) => c.m === "fromSlot")).toEqual({ m: "fromSlot", slot: 500 });
+    const result = await startGrpc(ix, "https://grpc.example", "tok", log);
+    expect(h.streams[0].req.fromSlot).toBe("500");
     expect(result.lastFromSlot()).toBe(500);
     expect(log).not.toHaveBeenCalled();
   });
@@ -162,8 +134,8 @@ describe("startGrpc", () => {
   it("logs and skips replay when the gap exceeds the replay limit", async () => {
     const ix = fakeIndexer(10_000, 100); // gap = 9900 > 3500
     const log = vi.fn();
-    const result = await startGrpc(ix, "tok", log);
-    expect(h.subBuilders[0].calls.find((c) => c.m === "fromSlot")).toBeUndefined();
+    const result = await startGrpc(ix, "https://grpc.example", "tok", log);
+    expect(h.streams[0].req.fromSlot).toBeUndefined();
     expect(result.lastFromSlot()).toBeNull();
     expect(log).toHaveBeenCalledWith(expect.stringContaining("stream gap of 9900 slots exceeds replay"));
   });
@@ -171,7 +143,7 @@ describe("startGrpc", () => {
   it("forwards a decodable stream update to indexer.onTx as a converted RawTx", async () => {
     const onTx = vi.fn(async (_tx: any) => {});
     const ix = fakeIndexer(0, 0, onTx);
-    await startGrpc(ix, "tok", vi.fn());
+    await startGrpc(ix, "https://grpc.example", "tok", vi.fn());
     const stream = h.streams[0];
 
     const update = minimalUpdate();
@@ -184,7 +156,7 @@ describe("startGrpc", () => {
   it("ignores a stream update that does not convert to a RawTx", async () => {
     const onTx = vi.fn(async (_tx: any) => {});
     const ix = fakeIndexer(0, 0, onTx);
-    await startGrpc(ix, "tok", vi.fn());
+    await startGrpc(ix, "https://grpc.example", "tok", vi.fn());
     const stream = h.streams[0];
 
     stream.emit("data", { slot: { slot: "1" } }); // no `.transaction` -> yellowstoneToRawTx returns null
@@ -197,7 +169,7 @@ describe("startGrpc", () => {
     });
     const ix = fakeIndexer(0, 0, onTx);
     const log = vi.fn();
-    await startGrpc(ix, "tok", log);
+    await startGrpc(ix, "https://grpc.example", "tok", log);
     const stream = h.streams[0];
 
     stream.emit("data", minimalUpdate());
@@ -210,7 +182,7 @@ describe("startGrpc", () => {
     vi.useFakeTimers();
     const ix = fakeIndexer(0, 0);
     const log = vi.fn();
-    const result = await startGrpc(ix, "tok", log);
+    const result = await startGrpc(ix, "https://grpc.example", "tok", log);
     const stream = h.streams[0];
     const removeAllListenersSpy = vi.spyOn(stream, "removeAllListeners");
 
@@ -231,7 +203,7 @@ describe("startGrpc", () => {
     vi.useFakeTimers();
     const ix = fakeIndexer(0, 0);
     const log = vi.fn();
-    const result = await startGrpc(ix, "tok", log);
+    const result = await startGrpc(ix, "https://grpc.example", "tok", log);
     const stream = h.streams[0];
 
     stream.emit("end");
@@ -247,7 +219,7 @@ describe("startGrpc", () => {
     vi.useFakeTimers();
     const ix = fakeIndexer(0, 0);
     const log = vi.fn();
-    await startGrpc(ix, "tok", log);
+    await startGrpc(ix, "https://grpc.example", "tok", log);
     const stream = h.streams[0];
 
     h.subscribe.mockImplementationOnce(async () => {

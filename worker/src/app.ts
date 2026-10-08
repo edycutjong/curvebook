@@ -17,7 +17,7 @@ const log = (...a: unknown[]) => console.log(new Date().toISOString(), ...a);
 export type Stream = { reconnects: () => number; lastFromSlot: () => number | null };
 
 export type IndexerFactory = (sql: Sql, rpc: Rpc, source: Source, log: typeof console.log) => Indexer;
-export type GrpcStarter = (indexer: Indexer, token: string, log: typeof console.log) => Promise<Stream>;
+export type GrpcStarter = (indexer: Indexer, url: string, token: string, log: typeof console.log) => Promise<Stream>;
 export type RpcLogsStarter = (indexer: Indexer, rpc: Rpc, rpcUrl: string, wsUrl: string, log: typeof console.log) => Stream;
 export type BeamBuilder = (swqosKey: string) => Promise<Beamer>;
 
@@ -88,7 +88,7 @@ export type StartedWorker = {
 
 export async function startWorker(deps: Deps): Promise<StartedWorker> {
   const { config, sql, rpc } = deps;
-  const source: Source = config.solamiToken ? "grpc" : "rpc";
+  const source: Source = config.grpcUrl ? "grpc" : "rpc";
   const indexer = deps.indexerFactory(sql, rpc, source, log);
   indexer.chainSlot = await rpc.getSlot();
   const startedAt = new Date();
@@ -101,7 +101,7 @@ export async function startWorker(deps: Deps): Promise<StartedWorker> {
   if (config.solamiSwqosKey) beam = await deps.buildBeamer(config.solamiSwqosKey);
 
   const stream = source === "grpc"
-    ? await deps.startGrpc(indexer, config.solamiToken, log)
+    ? await deps.startGrpc(indexer, config.grpcUrl, config.grpcToken, log)
     : deps.startRpcLogs(indexer, rpc, rpc.url, config.wsUrl, log);
   log(`worker up: source=${source} landing=${beam ? "beam" : "rpc"} chainSlot=${indexer.chainSlot} captureStart=${captureStart}`);
 

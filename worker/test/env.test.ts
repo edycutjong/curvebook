@@ -29,14 +29,16 @@ describe("env config", () => {
     expect(config.databaseUrl).toBe("postgres://user:pass@host:5432/db");
   });
 
-  it("applies default solamiToken empty string when unset", async () => {
-    const { config } = await importEnv({ SOLAMI_RPC_TOKEN: undefined });
-    expect(config.solamiToken).toBe("");
+  it("applies default empty grpcUrl and grpcToken when unset", async () => {
+    const { config } = await importEnv({ GRPC_URL: undefined, GRPC_TOKEN: undefined });
+    expect(config.grpcUrl).toBe("");
+    expect(config.grpcToken).toBe("");
   });
 
-  it("applies explicit SOLAMI_RPC_TOKEN", async () => {
-    const { config } = await importEnv({ SOLAMI_RPC_TOKEN: "secret-token-123" });
-    expect(config.solamiToken).toBe("secret-token-123");
+  it("applies explicit GRPC_URL and GRPC_TOKEN", async () => {
+    const { config } = await importEnv({ GRPC_URL: "https://grpc.example", GRPC_TOKEN: "secret-token-123" });
+    expect(config.grpcUrl).toBe("https://grpc.example");
+    expect(config.grpcToken).toBe("secret-token-123");
   });
 
   it("applies default solamiSwqosKey empty string when unset", async () => {
@@ -49,52 +51,32 @@ describe("env config", () => {
     expect(config.solamiSwqosKey).toBe("swqos-key-456");
   });
 
-  it("uses explicit RPC_URL override regardless of SOLAMI_RPC_TOKEN", async () => {
-    const { config } = await importEnv({ RPC_URL: "https://custom-rpc.example.com", SOLAMI_RPC_TOKEN: "ignored" });
+  it("uses explicit RPC_URL override", async () => {
+    const { config } = await importEnv({ RPC_URL: "https://custom-rpc.example.com" });
     expect(config.rpcUrl).toBe("https://custom-rpc.example.com");
   });
 
-  it("uses Solami RPC URL when SOLAMI_RPC_TOKEN set and RPC_URL unset", async () => {
-    const { config } = await importEnv({ SOLAMI_RPC_TOKEN: "my-token", RPC_URL: undefined });
-    expect(config.rpcUrl).toBe("https://rpc.solami.dev/sol?api_key=my-token");
-  });
-
-  it("uses public RPC endpoints when SOLAMI_RPC_TOKEN unset and RPC_URL unset", async () => {
-    const { config } = await importEnv({ SOLAMI_RPC_TOKEN: undefined, RPC_URL: undefined });
+  it("uses public RPC endpoints when RPC_URL unset", async () => {
+    const { config } = await importEnv({ RPC_URL: undefined });
     expect(config.rpcUrl).toBe("https://api.mainnet-beta.solana.com,https://solana-rpc.publicnode.com");
   });
 
-  it("uses explicit WS_URL override regardless of SOLAMI_RPC_TOKEN", async () => {
-    const { config } = await importEnv({ WS_URL: "wss://custom-ws.example.com", SOLAMI_RPC_TOKEN: "ignored" });
+  it("uses explicit WS_URL override", async () => {
+    const { config } = await importEnv({ WS_URL: "wss://custom-ws.example.com" });
     expect(config.wsUrl).toBe("wss://custom-ws.example.com");
   });
 
-  it("uses Solami WS URL when SOLAMI_RPC_TOKEN set and WS_URL unset", async () => {
-    const { config } = await importEnv({ SOLAMI_RPC_TOKEN: "my-token", WS_URL: undefined });
-    expect(config.wsUrl).toBe("wss://ws.solami.dev/ws/sol?api_key=my-token");
-  });
-
-  it("uses public WS endpoint when SOLAMI_RPC_TOKEN unset and WS_URL unset", async () => {
-    const { config } = await importEnv({ SOLAMI_RPC_TOKEN: undefined, WS_URL: undefined });
+  it("uses public WS endpoint when WS_URL unset", async () => {
+    const { config } = await importEnv({ WS_URL: undefined });
     expect(config.wsUrl).toBe("wss://api.mainnet-beta.solana.com");
   });
 
-  it("uses rpcRps 40 when SOLAMI_RPC_TOKEN set and RPC_RPS unset", async () => {
-    const { config } = await importEnv({ SOLAMI_RPC_TOKEN: "my-token", RPC_RPS: undefined });
-    expect(config.rpcRps).toBe(40);
-  });
-
-  it("uses rpcRps 3 when SOLAMI_RPC_TOKEN unset and RPC_RPS unset", async () => {
-    const { config } = await importEnv({ SOLAMI_RPC_TOKEN: undefined, RPC_RPS: undefined });
+  it("uses rpcRps 3 when RPC_RPS unset", async () => {
+    const { config } = await importEnv({ RPC_RPS: undefined });
     expect(config.rpcRps).toBe(3);
   });
 
-  it("applies explicit RPC_RPS override regardless of SOLAMI_RPC_TOKEN", async () => {
-    const { config } = await importEnv({ RPC_RPS: "25", SOLAMI_RPC_TOKEN: "my-token" });
-    expect(config.rpcRps).toBe(25);
-  });
-
-  it("applies explicit RPC_RPS override when SOLAMI_RPC_TOKEN unset", async () => {
+  it("applies explicit RPC_RPS override", async () => {
     const { config } = await importEnv({ RPC_RPS: "7" });
     expect(config.rpcRps).toBe(7);
   });
@@ -142,7 +124,8 @@ describe("env config", () => {
   it("structures config object with correct types", async () => {
     const { config } = await importEnv({});
     expect(config).toHaveProperty("databaseUrl");
-    expect(config).toHaveProperty("solamiToken");
+    expect(config).toHaveProperty("grpcUrl");
+    expect(config).toHaveProperty("grpcToken");
     expect(config).toHaveProperty("solamiSwqosKey");
     expect(config).toHaveProperty("rpcUrl");
     expect(config).toHaveProperty("wsUrl");

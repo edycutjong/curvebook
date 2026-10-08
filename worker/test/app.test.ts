@@ -78,7 +78,8 @@ function makeSetInterval() {
 function makeConfig(overrides: Partial<WorkerConfig> = {}): WorkerConfig {
   return {
     databaseUrl: "postgres://fake",
-    solamiToken: "",
+    grpcUrl: "",
+    grpcToken: "",
     solamiSwqosKey: "",
     rpcUrl: "http://rpc.fake",
     wsUrl: "ws://rpc.fake",
@@ -194,7 +195,7 @@ describe("json(): bigint-safe, single-write JSON responses", () => {
 describe("realDeps(): the production dependency set main.ts wires up", () => {
   it("wires real classes/functions, and buildBeamer resolves via the (mocked) solami builder", async () => {
     const sql = makeSql();
-    const config = makeConfig({ solamiToken: "tok", solamiSwqosKey: "key" });
+    const config = makeConfig({ grpcUrl: "https://grpc.example", grpcToken: "tok", solamiSwqosKey: "key" });
     const deps = realDeps(config, sql);
 
     expect(deps.config).toBe(config);
@@ -214,7 +215,7 @@ describe("realDeps(): the production dependency set main.ts wires up", () => {
   });
 });
 
-describe("startWorker(): rpc source (no solami token), no beam, fresh capture_start", () => {
+describe("startWorker(): rpc source (no gRPC endpoint), no beam, fresh capture_start", () => {
   let logSpy: ReturnType<typeof vi.spyOn>;
   let sql: any;
   let rpc: any;
@@ -443,7 +444,7 @@ describe("startWorker(): rpc source (no solami token), no beam, fresh capture_st
   });
 });
 
-describe("startWorker(): grpc source (solami token set) with beam, and a reused capture_start", () => {
+describe("startWorker(): grpc source (gRPC endpoint set) with beam, and a reused capture_start", () => {
   let logSpy: ReturnType<typeof vi.spyOn>;
   let sql: any;
   let rpc: any;
@@ -451,7 +452,7 @@ describe("startWorker(): grpc source (solami token set) with beam, and a reused 
   let setIntervalFn: any;
   let deps: Deps;
   let started: Awaited<ReturnType<typeof startWorker>>;
-  const config = makeConfig({ solamiToken: "tok-123", solamiSwqosKey: "swqos-key", workerToken: "secret" });
+  const config = makeConfig({ grpcUrl: "https://grpc.example", grpcToken: "tok-123", solamiSwqosKey: "swqos-key", workerToken: "secret" });
 
   beforeAll(async () => {
     logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
@@ -470,9 +471,9 @@ describe("startWorker(): grpc source (solami token set) with beam, and a reused 
     logSpy.mockRestore();
   });
 
-  it("selects the grpc source and starts startGrpc with the solami token, never startRpcLogs", () => {
+  it("selects the grpc source and starts startGrpc with the gRPC endpoint and token, never startRpcLogs", () => {
     expect(deps.startRpcLogs).not.toHaveBeenCalled();
-    expect(deps.startGrpc).toHaveBeenCalledWith(indexer, "tok-123", expect.any(Function));
+    expect(deps.startGrpc).toHaveBeenCalledWith(indexer, "https://grpc.example", "tok-123", expect.any(Function));
   });
 
   it("builds a beamer from solamiSwqosKey and logs landing=beam with the reused capture_start", () => {
