@@ -1,4 +1,4 @@
-// Shared indexing logic for both sources (Solami gRPC stream, keyless RPC logs).
+// Shared indexing logic for both sources (Yellowstone gRPC stream, keyless RPC logs).
 import {
   buildWindow, decodeMigrations, decodePoolConfig, decodeTx, describeConfig, openSlot, inWindow,
   DBC_PROGRAM_ID, FINALIZE_LAG_SLOTS, WINDOW_SLOTS,
@@ -33,7 +33,7 @@ export class Indexer {
   private crawling = new Set<string>();
   private configFetch = new Map<string, Promise<ConfigInfo | null>>();
 
-  constructor(private sql: Sql, private rpc: Rpc, readonly source: Source, private log = console.log) {}
+  constructor(private sql: Sql, private rpc: Rpc, public source: Source, private log = console.log) {}
 
   /** Resume windows that were pending when the worker stopped. */
   async resume() {

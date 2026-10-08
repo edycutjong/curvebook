@@ -9,7 +9,13 @@ export class RpcError extends Error {
   }
 }
 
-type Endpoint = { url: string; tokens: number; pausedUntil: number; strikes: number };
+type Endpoint = { url: string; token: string; tokens: number; pausedUntil: number; strikes: number };
+
+/** Where to go when the provider stops accepting the token (e.g. an expired plan). */
+export type RpcFallback = { urls: string; rps: number };
+
+const parse = (urls: string, token: string): Endpoint[] =>
+  urls.split(",").map((u) => u.trim()).filter(Boolean).map((url) => ({ url, token, tokens: 0, pausedUntil: 0, strikes: 0 }));
 
 export class Rpc {
   private endpoints: Endpoint[];
@@ -17,9 +23,16 @@ export class Rpc {
   private next = 0;
   errors = 0;
 
-  /** `urls` may be a comma-separated list; `token`, when set, is sent as the `x-token` header (RPC Fast). */
-  constructor(urls: string, private rps: number, private token = "") {
-    this.endpoints = urls.split(",").map((u) => u.trim()).filter(Boolean).map((url) => ({ url, tokens: rps, pausedUntil: 0, strikes: 0 }));
+  /** Set once the provider rejected the token and requests moved to the fallback endpoints. */
+  fellBack = false;
+
+  /**
+   * `urls` may be a comma-separated list; `token`, when set, is sent as the `x-token` header (RPC Fast) to
+   * those endpoints only. On HTTP 401/403 from them, every request moves to `fallback` (sent without a token).
+   */
+  constructor(urls: string, private rps: number, token = "", private fallback?: RpcFallback) {
+    this.endpoints = parse(urls, token);
+    for (const e of this.endpoints) e.tokens = rps;
     setInterval(() => {
       for (const e of this.endpoints) e.tokens = this.rps;
       this.drain();
@@ -68,7 +81,7 @@ export class Rpc {
       try {
         const r = await fetch(ep.url, {
           method: "POST",
-          headers: this.token ? { "content-type": "application/json", "x-token": this.token } : { "content-type": "application/json" },
+          headers: ep.token ? { "content-type": "application/json", "x-token": ep.token } : { "content-type": "application/json" },
           body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
           signal: AbortSignal.timeout(20_000),
         });
@@ -77,6 +90,16 @@ export class Rpc {
           const retryAfter = Number(r.headers.get("retry-after")) || 0;
           ep.pausedUntil = Date.now() + Math.max(retryAfter * 1000, Math.min(30_000, 1000 * 2 ** Math.min(ep.strikes, 5)));
           throw new RpcError(429, `HTTP 429 from ${new URL(ep.url).host}`);
+        }
+        if (r.status === 401 || r.status === 403) {
+          if (ep.token && this.fallback && !this.fellBack) {
+            this.fellBack = true;
+            this.rps = this.fallback.rps;
+            this.endpoints = parse(this.fallback.urls, "");
+            for (const e of this.endpoints) e.tokens = this.rps;
+            throw new RpcError(r.status, `HTTP ${r.status} from ${new URL(ep.url).host}; switched to fallback RPC`);
+          }
+          throw Object.assign(new RpcError(r.status, `HTTP ${r.status} from ${new URL(ep.url).host}`), { fatal: true });
         }
         if (r.status >= 500) throw new RpcError(r.status, `HTTP ${r.status}`);
         const j: any = await r.json();

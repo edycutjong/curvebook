@@ -45,10 +45,46 @@ export function yellowstoneToRawTx(update: any): RawTx | null {
   };
 }
 
-export async function startGrpc(ix: Indexer, url: string, token: string, log = console.log) {
-  const client = new Client(url, token || undefined, undefined);
+/** gRPC status codes that mean the endpoint will not serve this token (UNAUTHENTICATED, PERMISSION_DENIED). */
+const AUTH_CODES = new Set([7, 16]);
+/** Consecutive auth failures before giving up on the endpoint (e.g. an expired plan). */
+const AUTH_FAILURE_LIMIT = 3;
+const MAX_BACKOFF_MS = 60_000;
+/** DBC sees several transactions a second; a stream silent this long is half-open, not idle. */
+const SILENCE_MS = 30_000;
+
+export type GrpcOptions = {
+  /** Called once when the endpoint keeps rejecting the token; the stream is stopped first. */
+  onAuthFailure?: () => void;
+  setTimeout?: typeof setTimeout;
+  setInterval?: typeof setInterval;
+  now?: () => number;
+};
+
+export async function startGrpc(ix: Indexer, url: string, token: string, log = console.log, opts: GrpcOptions = {}) {
+  const later = opts.setTimeout ?? setTimeout;
+  const every = opts.setInterval ?? setInterval;
+  const now = opts.now ?? Date.now;
+  const client = new Client(url, token || undefined, {
+    "grpc.keepalive_time_ms": 30_000,
+    "grpc.keepalive_timeout_ms": 10_000,
+    "grpc.keepalive_permit_without_calls": 1,
+  });
   let reconnects = 0;
+  let failures = 0;
+  let authFailures = 0;
   let lastFromSlot: number | null = null;
+  let stopped = false;
+  let lastData = now();
+  let current: { retry: (why: string, code?: number) => void } | null = null;
+
+  const schedule = () => {
+    const delay = Math.min(MAX_BACKOFF_MS, 1_000 * 2 ** Math.min(failures, 6));
+    failures++;
+    later(() => {
+      if (!stopped) connect().catch((e) => { log(`reconnect failed: ${e?.message}`); schedule(); });
+    }, delay);
+  };
 
   const connect = async (): Promise<void> => {
     const req: SubscribeRequest = {
@@ -67,19 +103,47 @@ export async function startGrpc(ix: Indexer, url: string, token: string, log = c
     }
     const stream = await client.subscribe();
     stream.write(req);
+    lastData = now();
+    let closed = false;
     stream.on("data", (u: any) => {
+      lastData = now();
+      failures = 0;
+      authFailures = 0;
       const tx = yellowstoneToRawTx(u);
       if (tx) ix.onTx(tx).catch((e) => log(`onTx: ${e?.message}`));
     });
-    const retry = (why: string) => {
+    const retry = (why: string, code?: number) => {
+      if (closed) return;
+      closed = true;
       stream.removeAllListeners();
+      stream.on("error", () => {}); // a late error after "end" must not become an uncaught exception
+      try { stream.cancel(); } catch { /* already closed */ }
+      if (code !== undefined && AUTH_CODES.has(code) && ++authFailures >= AUTH_FAILURE_LIMIT && opts.onAuthFailure) {
+        stopped = true;
+        clearInterval(watchdog);
+        log(`gRPC endpoint rejected the token ${authFailures} times (${why}); giving up on gRPC`);
+        opts.onAuthFailure();
+        return;
+      }
+      if (stopped) return;
       reconnects++;
       log(`gRPC stream ${why}; reconnecting from slot ${ix.lastSlot}`);
-      setTimeout(() => connect().catch((e) => log(`reconnect failed: ${e?.message}`)), 1_000);
+      schedule();
     };
-    stream.once("error", (e: any) => retry(`error: ${e?.message}`));
+    current = { retry };
+    stream.once("error", (e: any) => retry(`error: ${e?.message}`, e?.code));
     stream.once("end", () => retry("ended"));
   };
+
+  const watchdog = every(() => {
+    if (!stopped && current && now() - lastData > SILENCE_MS) current.retry(`silent for ${SILENCE_MS / 1000} s`);
+  }, 10_000);
+  (watchdog as any).unref?.();
+
   await connect();
-  return { reconnects: () => reconnects, lastFromSlot: () => lastFromSlot };
+  return {
+    reconnects: () => reconnects,
+    lastFromSlot: () => lastFromSlot,
+    stop: () => { stopped = true; clearInterval(watchdog); current?.retry("stopped"); },
+  };
 }

@@ -81,6 +81,9 @@ function makeConfig(overrides: Partial<WorkerConfig> = {}): WorkerConfig {
     grpcUrl: "",
     grpcToken: "",
     rpcToken: "",
+    rpcFallbackUrl: "http://fallback1.fake,http://fallback2.fake",
+    rpcFallbackRps: 3,
+    wsFallbackUrl: "wss://fallback.fake",
     solamiSwqosKey: "",
     rpcUrl: "http://rpc.fake",
     wsUrl: "ws://rpc.fake",
@@ -213,6 +216,14 @@ describe("realDeps(): the production dependency set main.ts wires up", () => {
 
     const beamer = await deps.buildBeamer("swqos-key");
     await expect(beamer({} as any)).resolves.toBe("mock-sig");
+  });
+
+  it("gives the Rpc a keyless fallback only when an RPC token is set", () => {
+    const sql = makeSql();
+    const withToken = realDeps(makeConfig({ rpcUrl: "http://provider.fake", rpcToken: "tok" }), sql).rpc as any;
+    const without = realDeps(makeConfig({ rpcUrl: "http://provider.fake" }), sql).rpc as any;
+    expect(withToken.fallback).toEqual({ urls: "http://fallback1.fake,http://fallback2.fake", rps: 3 });
+    expect(without.fallback).toBeUndefined();
   });
 });
 
@@ -474,7 +485,7 @@ describe("startWorker(): grpc source (gRPC endpoint set) with beam, and a reused
 
   it("selects the grpc source and starts startGrpc with the gRPC endpoint and token, never startRpcLogs", () => {
     expect(deps.startRpcLogs).not.toHaveBeenCalled();
-    expect(deps.startGrpc).toHaveBeenCalledWith(indexer, "https://grpc.example", "tok-123", expect.any(Function));
+    expect(deps.startGrpc).toHaveBeenCalledWith(indexer, "https://grpc.example", "tok-123", expect.any(Function), { onAuthFailure: expect.any(Function) });
   });
 
   it("builds a beamer from solamiSwqosKey and logs landing=beam with the reused capture_start", () => {
@@ -529,3 +540,69 @@ describe("startWorker(): auth guard treats an empty WORKER_TOKEN as always-401",
     expect(res.status).toBe(401);
   });
 });
+
+describe("startWorker(): grpc cold start replays from the last saved slot, and falls back to keyless on auth failure", () => {
+  let logSpy: ReturnType<typeof vi.spyOn>;
+  let sql: any;
+  let rpc: any;
+  let indexer: any;
+  let setIntervalFn: any;
+  let deps: Deps;
+  let started: Awaited<ReturnType<typeof startWorker>>;
+  const config = makeConfig({ grpcUrl: "https://grpc.example", grpcToken: "tok" });
+
+  beforeAll(async () => {
+    logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    sql = makeSql({ "select last_slot from health where id = 1": () => [{ last_slot: "40" }] });
+    rpc = makeRpc({ slot: 50 }); // chainSlot 51 > saved 40
+    indexer = makeIndexer();
+    setIntervalFn = makeSetInterval();
+    deps = baseDeps(config, sql, rpc, indexer, setIntervalFn);
+    started = await startWorker(deps);
+  });
+
+  afterAll(() => {
+    started.stop();
+    logSpy.mockRestore();
+  });
+
+  it("seeds indexer.lastSlot from health.last_slot so the stream replays the redeploy gap", () => {
+    expect(indexer.lastSlot).toBe(40);
+  });
+
+  it("onAuthFailure switches to the keyless logs source on the fallback endpoints and starts the watched poll", async () => {
+    const { onAuthFailure } = (deps.startGrpc as any).mock.calls[0][4];
+    const before = setIntervalFn.calls.length;
+    onAuthFailure();
+    expect(indexer.source).toBe("rpc");
+    expect(deps.startRpcLogs).toHaveBeenCalledWith(indexer, rpc, "http://fallback1.fake", "wss://fallback.fake", expect.any(Function));
+    expect(setIntervalFn.calls.length).toBe(before + 1);
+    expect(setIntervalFn.calls.at(-1).ms).toBe(1_500);
+    await new Promise((r) => setImmediate(r));
+    expect(sql.calls.some((c: SqlCall) => c.text.includes("update health set source = 'rpc'"))).toBe(true);
+    expect(logSpy.mock.calls.some((c: any) => c.join(" ").includes("source=rpc (fallback)"))).toBe(true);
+  });
+
+  it("logs, rather than throws, when the health source update fails", async () => {
+    const failing = makeSql({ "update health set source": () => Promise.reject(new Error("db down")) });
+    const d2 = baseDeps(config, failing, makeRpc({ slot: 50 }), makeIndexer(), makeSetInterval());
+    const w2 = await startWorker(d2);
+    expect(() => (d2.startGrpc as any).mock.calls[0][4].onAuthFailure()).not.toThrow();
+    await new Promise((r) => setImmediate(r));
+    expect(logSpy.mock.calls.some((c: any) => c.join(" ").includes("health: db down"))).toBe(true);
+    w2.stop();
+  });
+});
+
+describe("startWorker(): no replay seed when the saved slot is missing or the source is rpc", () => {
+  it("leaves lastSlot at 0 for the rpc source even with a saved slot", async () => {
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    const indexer = makeIndexer();
+    const sql = makeSql({ "select last_slot from health where id = 1": () => [{ last_slot: "40" }] });
+    const w = await startWorker(baseDeps(makeConfig(), sql, makeRpc({ slot: 50 }), indexer, makeSetInterval()));
+    expect(indexer.lastSlot).toBe(0);
+    w.stop();
+    logSpy.mockRestore();
+  });
+});
+

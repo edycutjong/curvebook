@@ -66,6 +66,15 @@ describe("env config", () => {
     expect((await importEnv({ RPC_TOKEN: "rpc-tok" })).config.rpcToken).toBe("rpc-tok");
   });
 
+  it("defaults the keyless fallback to public mainnet endpoints at 3 rps, and honours overrides", async () => {
+    const d = (await importEnv({ RPC_FALLBACK_URL: undefined, RPC_FALLBACK_RPS: undefined, WS_FALLBACK_URL: undefined })).config;
+    expect(d.rpcFallbackUrl).toBe("https://api.mainnet-beta.solana.com,https://solana-rpc.publicnode.com");
+    expect(d.rpcFallbackRps).toBe(3);
+    expect(d.wsFallbackUrl).toBe("wss://api.mainnet-beta.solana.com");
+    const o = (await importEnv({ RPC_FALLBACK_URL: "http://f.test", RPC_FALLBACK_RPS: "5", WS_FALLBACK_URL: "wss://f.test" })).config;
+    expect([o.rpcFallbackUrl, o.rpcFallbackRps, o.wsFallbackUrl]).toEqual(["http://f.test", 5, "wss://f.test"]);
+  });
+
   it("uses explicit WS_URL override", async () => {
     const { config } = await importEnv({ WS_URL: "wss://custom-ws.example.com" });
     expect(config.wsUrl).toBe("wss://custom-ws.example.com");

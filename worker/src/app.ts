@@ -10,14 +10,14 @@ import { aggregate as realAggregate } from "./agg.js";
 import { land as realLand, LandError, type Beamer } from "./lander.js";
 import { toJson } from "./json.js";
 import { startRpcLogs as realStartRpcLogs } from "./sources/rpc-logs.js";
-import { startGrpc as realStartGrpc } from "./sources/grpc.js";
+import { startGrpc as realStartGrpc, type GrpcOptions } from "./sources/grpc.js";
 
 const log = (...a: unknown[]) => console.log(new Date().toISOString(), ...a);
 
 export type Stream = { reconnects: () => number; lastFromSlot: () => number | null };
 
 export type IndexerFactory = (sql: Sql, rpc: Rpc, source: Source, log: typeof console.log) => Indexer;
-export type GrpcStarter = (indexer: Indexer, url: string, token: string, log: typeof console.log) => Promise<Stream>;
+export type GrpcStarter = (indexer: Indexer, url: string, token: string, log: typeof console.log, opts?: GrpcOptions) => Promise<Stream>;
 export type RpcLogsStarter = (indexer: Indexer, rpc: Rpc, rpcUrl: string, wsUrl: string, log: typeof console.log) => Stream;
 export type BeamBuilder = (swqosKey: string) => Promise<Beamer>;
 
@@ -39,7 +39,7 @@ export function realDeps(config: WorkerConfig, sql: Sql): Deps {
   return {
     config,
     sql,
-    rpc: new Rpc(config.rpcUrl, config.rpcRps, config.rpcToken),
+    rpc: new Rpc(config.rpcUrl, config.rpcRps, config.rpcToken, config.rpcToken ? { urls: config.rpcFallbackUrl, rps: config.rpcFallbackRps } : undefined),
     indexerFactory: (s, r, source, l) => new Indexer(s, r, source, l),
     startGrpc: realStartGrpc,
     startRpcLogs: realStartRpcLogs,
@@ -88,9 +88,13 @@ export type StartedWorker = {
 
 export async function startWorker(deps: Deps): Promise<StartedWorker> {
   const { config, sql, rpc } = deps;
-  const source: Source = config.grpcUrl ? "grpc" : "rpc";
+  let source: Source = config.grpcUrl ? "grpc" : "rpc";
   const indexer = deps.indexerFactory(sql, rpc, source, log);
   indexer.chainSlot = await rpc.getSlot();
+  // Cold start: resume the gRPC stream from the last slot the previous process saw, so a redeploy
+  // gap is replayed (the stream itself refuses gaps beyond its replay limit and logs them).
+  const prevSlot = Number((await sql`select last_slot from health where id = 1`)[0]?.last_slot ?? 0);
+  if (source === "grpc" && prevSlot > 0 && prevSlot < indexer.chainSlot) indexer.lastSlot = prevSlot;
   const startedAt = new Date();
   const captureStart = (await sql`select capture_start_slot from health where id = 1`)[0]?.capture_start_slot ?? indexer.chainSlot;
   await sql`insert into health (id, source, started_at, capture_start_slot) values (1, ${source}, ${startedAt}, ${captureStart})
@@ -100,14 +104,24 @@ export async function startWorker(deps: Deps): Promise<StartedWorker> {
   let beam: Beamer | null = null;
   if (config.solamiSwqosKey) beam = await deps.buildBeamer(config.solamiSwqosKey);
 
-  const stream = source === "grpc"
-    ? await deps.startGrpc(indexer, config.grpcUrl, config.grpcToken, log)
+  const watched = () => every(deps.setInterval, 1_500, async function watched() { await indexer.pollWatched(); }, log);
+  // The gRPC endpoint keeps rejecting the token (an expired plan): carry on keyless rather than wedge.
+  const fallBackToRpc = () => {
+    source = "rpc";
+    indexer.source = "rpc";
+    stream = deps.startRpcLogs(indexer, rpc, config.rpcFallbackUrl.split(",")[0].trim(), config.wsFallbackUrl, log);
+    watched();
+    sql`update health set source = 'rpc' where id = 1`.catch((e: any) => log(`health: ${e?.message}`));
+    log("source=rpc (fallback)");
+  };
+  let stream: Stream = source === "grpc"
+    ? await deps.startGrpc(indexer, config.grpcUrl, config.grpcToken, log, { onAuthFailure: fallBackToRpc })
     : deps.startRpcLogs(indexer, rpc, rpc.url, config.wsUrl, log);
   log(`worker up: source=${source} landing=${beam ? "beam" : "rpc"} chainSlot=${indexer.chainSlot} captureStart=${captureStart}`);
 
   every(deps.setInterval, 2_000, async function chainSlot() { indexer.chainSlot = await rpc.getSlot(); }, log);
   every(deps.setInterval, 2_000, async function finalize() { await indexer.tick(); }, log);
-  if (source === "rpc") every(deps.setInterval, 1_500, async function watched() { await indexer.pollWatched(); }, log);
+  if (source === "rpc") watched();
   every(deps.setInterval, config.aggEverySec * 1_000, async function agg() {
     const r = await deps.aggregate(sql);
     log(`agg: ${r.windows} windows, ${r.configs} configs, ${r.ranked} ranked`);

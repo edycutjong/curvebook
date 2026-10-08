@@ -15,7 +15,7 @@ function fakeResponse(spec: Spec) {
     status,
     headers: { get: (name: string) => (name.toLowerCase() === "retry-after" ? (spec as any).retryAfter ?? null : null) },
     async json() {
-      if (status === 429 || status >= 500) throw new Error(`json() must not be called on HTTP ${status}`);
+      if (status === 429 || status >= 500 || status === 401 || status === 403) throw new Error(`json() must not be called on HTTP ${status}`);
       return spec;
     },
   };
@@ -140,6 +140,36 @@ describe("auth header", () => {
     await new Rpc("http://only.test", 10).call("getSlot", []);
     expect(calls[0].headers).toEqual({ "content-type": "application/json", "x-token": "tok" });
     expect(calls[1].headers).toEqual({ "content-type": "application/json" });
+  });
+});
+
+describe("provider auth failure (expired plan)", () => {
+  it("on 401 from a tokened endpoint, moves every request to the fallback endpoints without the token", async () => {
+    const calls = mockFetch([{ status: 401 }, { result: 7 }, { result: 8 }]);
+    const rpc = new Rpc("http://provider.test", 40, "tok", { urls: "http://pub1.test,http://pub2.test", rps: 3 });
+    const p = rpc.call("getSlot", []);
+    await vi.advanceTimersByTimeAsync(250);
+    expect(await p).toBe(7);
+    expect(rpc.fellBack).toBe(true);
+    expect(rpc.url).toBe("http://pub1.test");
+    expect(calls[1].url).toBe("http://pub1.test");
+    expect(calls[1].headers).toEqual({ "content-type": "application/json" });
+    await rpc.call("getSlot", []);
+    expect(calls[2].url).toBe("http://pub2.test");
+  });
+
+  it("on 403 with no fallback configured, fails fast instead of retrying", async () => {
+    const calls = mockFetch([{ status: 403 }]);
+    const rpc = new Rpc("http://provider.test", 40, "tok");
+    await expect(rpc.call("getSlot", [])).rejects.toMatchObject({ code: 403 });
+    expect(calls).toHaveLength(1);
+  });
+
+  it("a 401 from an endpoint without a token is fatal and does not switch", async () => {
+    mockFetch([{ status: 401 }]);
+    const rpc = new Rpc("http://pub.test", 3, "", { urls: "http://other.test", rps: 3 });
+    await expect(rpc.call("getSlot", [])).rejects.toMatchObject({ code: 401 });
+    expect(rpc.fellBack).toBe(false);
   });
 });
 

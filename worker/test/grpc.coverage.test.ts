@@ -7,11 +7,16 @@ import { yellowstoneToRawTx } from "../src/sources/grpc.js";
 // Shared mock state for the "@triton-one/yellowstone-grpc" module, built once via vi.hoisted so the
 // vi.mock factory below (which is hoisted above imports) can close over it.
 const h = vi.hoisted(() => {
-  const streams: Array<EventEmitter & { write: (req: any) => void; req?: any }> = [];
+  const streams: Array<EventEmitter & { write: (req: any) => void; cancel: () => void; req?: any; cancelled?: number }> = [];
   const ctorArgs: any[][] = [];
 
   const subscribe = vi.fn(async () => {
-    const s = Object.assign(new EventEmitter(), { req: undefined as any, write(req: any) { s.req = req; } });
+    const s = Object.assign(new EventEmitter(), {
+      req: undefined as any,
+      cancelled: 0,
+      write(req: any) { s.req = req; },
+      cancel() { s.cancelled++; },
+    });
     streams.push(s);
     return s;
   });
@@ -99,7 +104,7 @@ describe("startGrpc", () => {
     const log = vi.fn();
     await startGrpc(ix, "https://grpc.example", "tok-123", log);
 
-    expect(h.ctorArgs).toEqual([["https://grpc.example", "tok-123", undefined]]);
+    expect(h.ctorArgs).toEqual([["https://grpc.example", "tok-123", expect.objectContaining({ "grpc.keepalive_time_ms": 30_000 })]]);
     const req = h.streams[0].req;
     expect(req.transactions).toEqual({
       dbc: { accountInclude: [DBC_PROGRAM_ID], accountExclude: [], accountRequired: [], vote: false, failed: false },
@@ -234,4 +239,111 @@ describe("startGrpc", () => {
 
     expect(log).toHaveBeenCalledWith("reconnect failed: conn refused");
   });
+
+  it("backs off exponentially across failed reconnects and resets after data arrives", async () => {
+    vi.useFakeTimers();
+    const log = vi.fn();
+    await startGrpc(fakeIndexer(0, 0), "https://grpc.example", "tok", log);
+    h.streams[0].emit("error", new Error("a"));
+    await vi.advanceTimersByTimeAsync(1_000);
+    expect(h.streams).toHaveLength(2);
+    h.streams[1].emit("error", new Error("b")); // second consecutive failure waits 2 s
+    await vi.advanceTimersByTimeAsync(1_999);
+    expect(h.streams).toHaveLength(2);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(h.streams).toHaveLength(3);
+    h.streams[2].emit("data", { slot: { slot: "1" } }); // data resets the backoff
+    h.streams[2].emit("error", new Error("c"));
+    await vi.advanceTimersByTimeAsync(1_000);
+    expect(h.streams).toHaveLength(4);
+  });
+
+  it("cancels the old stream and swallows a late error that follows 'end'", async () => {
+    vi.useFakeTimers();
+    await startGrpc(fakeIndexer(0, 0), "https://grpc.example", "tok", vi.fn());
+    const s = h.streams[0];
+    s.emit("end");
+    expect(s.cancelled).toBe(1);
+    expect(() => s.emit("error", new Error("late"))).not.toThrow();
+  });
+
+  it("tolerates a stream whose cancel() throws", async () => {
+    vi.useFakeTimers();
+    const log = vi.fn();
+    await startGrpc(fakeIndexer(0, 0), "https://grpc.example", "tok", log);
+    h.streams[0].cancel = () => { throw new Error("closed"); };
+    h.streams[0].emit("end");
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("gRPC stream ended"));
+  });
+
+  it("schedules another attempt when a reconnect itself fails", async () => {
+    vi.useFakeTimers();
+    const log = vi.fn();
+    await startGrpc(fakeIndexer(0, 0), "https://grpc.example", "tok", log);
+    h.subscribe.mockImplementationOnce(async () => { throw new Error("conn refused"); });
+    h.streams[0].emit("error", new Error("boom"));
+    await vi.advanceTimersByTimeAsync(1_000);
+    expect(log).toHaveBeenCalledWith("reconnect failed: conn refused");
+    await vi.advanceTimersByTimeAsync(2_000);
+    expect(h.streams).toHaveLength(2);
+  });
+
+  it("the watchdog reconnects a stream that has been silent for 30 s", async () => {
+    vi.useFakeTimers();
+    const log = vi.fn();
+    const r = await startGrpc(fakeIndexer(0, 0), "https://grpc.example", "tok", log);
+    await vi.advanceTimersByTimeAsync(20_000);
+    expect(r.reconnects()).toBe(0);
+    await vi.advanceTimersByTimeAsync(20_000);
+    expect(r.reconnects()).toBe(1);
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("silent for 30 s"));
+  });
+
+  it("gives up after 3 consecutive auth rejections and calls onAuthFailure once", async () => {
+    vi.useFakeTimers();
+    const log = vi.fn();
+    const onAuthFailure = vi.fn();
+    const r = await startGrpc(fakeIndexer(0, 0), "https://grpc.example", "tok", log, { onAuthFailure });
+    const unauth = () => Object.assign(new Error("16 UNAUTHENTICATED"), { code: 16 });
+    h.streams[0].emit("error", unauth());
+    await vi.advanceTimersByTimeAsync(1_000);
+    h.streams[1].emit("error", Object.assign(new Error("7 PERMISSION_DENIED"), { code: 7 }));
+    await vi.advanceTimersByTimeAsync(2_000);
+    h.streams[2].emit("error", unauth());
+    expect(onAuthFailure).toHaveBeenCalledTimes(1);
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("rejected the token 3 times"));
+    await vi.advanceTimersByTimeAsync(120_000);
+    expect(h.streams).toHaveLength(3); // no further attempts, watchdog stopped
+    expect(r.reconnects()).toBe(2);
+  });
+
+  it("keeps retrying auth rejections when no onAuthFailure handler is given", async () => {
+    vi.useFakeTimers();
+    await startGrpc(fakeIndexer(0, 0), "https://grpc.example", "tok", vi.fn());
+    for (let i = 0; i < 4; i++) {
+      h.streams[i].emit("error", Object.assign(new Error("unauth"), { code: 16 }));
+      await vi.advanceTimersByTimeAsync(1_000 * 2 ** i); // exactly the backoff, so the 30 s watchdog never fires
+    }
+    expect(h.streams).toHaveLength(5);
+  });
+
+  it("stop() closes the stream and prevents any reconnect", async () => {
+    vi.useFakeTimers();
+    const r = await startGrpc(fakeIndexer(0, 0), "https://grpc.example", "tok", vi.fn());
+    r.stop();
+    expect(h.streams[0].cancelled).toBe(1);
+    await vi.advanceTimersByTimeAsync(120_000);
+    expect(h.streams).toHaveLength(1);
+    expect(r.reconnects()).toBe(0);
+  });
+
+  it("a reconnect timer that fires after stop() does nothing", async () => {
+    vi.useFakeTimers();
+    const r = await startGrpc(fakeIndexer(0, 0), "https://grpc.example", "tok", vi.fn());
+    h.streams[0].emit("error", new Error("boom"));
+    r.stop();
+    await vi.advanceTimersByTimeAsync(5_000);
+    expect(h.streams).toHaveLength(1);
+  });
 });
+

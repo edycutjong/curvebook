@@ -1,6 +1,6 @@
 // Keyless source: discover launches and graduations from the public logs stream,
 // then let the indexer crawl each window from confirmed signatures.
-// This is the documented fallback when no Solami token is configured.
+// This is the documented fallback when no gRPC endpoint is configured, or when it rejects the token.
 import { Connection, PublicKey } from "@solana/web3.js";
 import { DBC_PROGRAM_ID } from "@curvebook/core";
 import type { Indexer } from "../indexer.js";
