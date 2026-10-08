@@ -16,7 +16,7 @@ export const config = {
    */
   rpcUrl: env.RPC_URL ?? PUBLIC_RPC,
   /** Sent as the x-token header to the RPC_URL endpoints only (RPC Fast authenticates this way). */
-  rpcToken: env.RPC_TOKEN ?? "",
+  rpcToken: env.RPC_URL ? env.RPC_TOKEN ?? "" : "", // never send a provider token to the public defaults
   wsUrl: env.WS_URL ?? PUBLIC_WS,
   /** Keyless endpoints the worker moves to when the provider rejects the token (e.g. the plan expired). */
   rpcFallbackUrl: env.RPC_FALLBACK_URL ?? PUBLIC_RPC,

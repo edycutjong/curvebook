@@ -32,6 +32,7 @@ export type Deps = {
   aggregate: typeof realAggregate;
   land: typeof realLand;
   setInterval: typeof setInterval;
+  setTimeout: (fn: () => void, ms: number) => unknown;
 };
 
 /** The real dependencies main.ts wires up for an actual run. */
@@ -50,6 +51,7 @@ export function realDeps(config: WorkerConfig, sql: Sql): Deps {
     aggregate: realAggregate,
     land: realLand,
     setInterval,
+    setTimeout,
   };
 }
 
@@ -94,7 +96,7 @@ export async function startWorker(deps: Deps): Promise<StartedWorker> {
   // Cold start: resume the gRPC stream from the last slot the previous process saw, so a redeploy
   // gap is replayed (the stream itself refuses gaps beyond its replay limit and logs them).
   const prevSlot = Number((await sql`select last_slot from health where id = 1`)[0]?.last_slot ?? 0);
-  if (source === "grpc" && prevSlot > 0 && prevSlot < indexer.chainSlot) indexer.lastSlot = prevSlot;
+  if (source === "grpc" && prevSlot > 0) indexer.lastSlot = prevSlot;
   const startedAt = new Date();
   const captureStart = (await sql`select capture_start_slot from health where id = 1`)[0]?.capture_start_slot ?? indexer.chainSlot;
   await sql`insert into health (id, source, started_at, capture_start_slot) values (1, ${source}, ${startedAt}, ${captureStart})
@@ -109,7 +111,14 @@ export async function startWorker(deps: Deps): Promise<StartedWorker> {
   const fallBackToRpc = () => {
     source = "rpc";
     indexer.source = "rpc";
-    stream = deps.startRpcLogs(indexer, rpc, config.rpcFallbackUrl.split(",")[0].trim(), config.wsFallbackUrl, log);
+    try {
+      stream = deps.startRpcLogs(indexer, rpc, config.rpcFallbackUrl.split(",")[0].trim(), config.wsFallbackUrl, log);
+    } catch (e: any) {
+      // Never end up with no source at all: keep trying until the keyless stream starts.
+      log(`fallback source failed to start: ${e?.message}; retrying in 30 s`);
+      deps.setTimeout(fallBackToRpc, 30_000);
+      return;
+    }
     watched();
     sql`update health set source = 'rpc' where id = 1`.catch((e: any) => log(`health: ${e?.message}`));
     log("source=rpc (fallback)");

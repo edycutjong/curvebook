@@ -119,12 +119,11 @@ describe("startGrpc", () => {
     expect(h.ctorArgs[0][1]).toBeUndefined();
   });
 
-  it("does not replay from a slot when lastSlot has already caught up to chainSlot (gap <= 0)", async () => {
-    const ix = fakeIndexer(100, 100);
-    const log = vi.fn();
-    const result = await startGrpc(ix, "https://grpc.example", "tok", log);
-    expect(h.streams[0].req.fromSlot).toBeUndefined();
-    expect(result.lastFromSlot()).toBeNull();
+  it("still replays from lastSlot when it is ahead of the confirmed chainSlot (processed vs confirmed)", async () => {
+    const ix = fakeIndexer(100, 103);
+    const result = await startGrpc(ix, "https://grpc.example", "tok", vi.fn());
+    expect(h.streams[0].req.fromSlot).toBe("103");
+    expect(result.lastFromSlot()).toBe(103);
   });
 
   it("replays from lastSlot when the gap is within the replay limit", async () => {
@@ -344,6 +343,54 @@ describe("startGrpc", () => {
     r.stop();
     await vi.advanceTimersByTimeAsync(5_000);
     expect(h.streams).toHaveLength(1);
+  });
+
+  it("reads the real status from trailing metadata when the error surfaces as 1 CANCELLED", async () => {
+    const { grpcStatus } = await import("../src/sources/grpc.js");
+    const meta = (v?: string) => ({ get: (k: string) => (k === "grpc-status" && v !== undefined ? [v] : []) });
+    expect(grpcStatus({ code: 1, metadata: meta("7") })).toBe(7);
+    expect(grpcStatus({ code: 16, metadata: meta() })).toBe(16);
+    expect(grpcStatus({ code: 14, metadata: meta("0") })).toBe(14);
+    expect(grpcStatus(new Error("no code"))).toBeUndefined();
+    expect(grpcStatus(undefined)).toBeUndefined();
+  });
+
+  it("counts an auth status hidden in metadata toward the fallback", async () => {
+    vi.useFakeTimers();
+    const onAuthFailure = vi.fn();
+    await startGrpc(fakeIndexer(0, 0), "https://grpc.example", "tok", vi.fn(), { onAuthFailure });
+    const cancelled = () => Object.assign(new Error("1 CANCELLED"), { code: 1, metadata: { get: () => ["7"] } });
+    for (let i = 0; i < 3; i++) {
+      h.streams[i].emit("error", cancelled());
+      await vi.advanceTimersByTimeAsync(1_000 * 2 ** i);
+    }
+    expect(onAuthFailure).toHaveBeenCalledTimes(1);
+  });
+
+  it("a non-auth error resets the consecutive auth count", async () => {
+    vi.useFakeTimers();
+    const onAuthFailure = vi.fn();
+    await startGrpc(fakeIndexer(0, 0), "https://grpc.example", "tok", vi.fn(), { onAuthFailure });
+    const codes = [16, 16, 14, 16, 16];
+    for (let i = 0; i < codes.length; i++) {
+      h.streams[i].emit("error", Object.assign(new Error("x"), { code: codes[i] }));
+      await vi.advanceTimersByTimeAsync(1_000 * 2 ** i);
+    }
+    expect(onAuthFailure).not.toHaveBeenCalled();
+  });
+
+  it("gives up after 8 failed connections with no data, whatever the errors were", async () => {
+    vi.useFakeTimers();
+    const log = vi.fn();
+    const onAuthFailure = vi.fn();
+    await startGrpc(fakeIndexer(0, 0), "https://grpc.example", "tok", log, { onAuthFailure });
+    for (let i = 0; i < 8; i++) {
+      h.streams[i]?.emit("error", Object.assign(new Error("unavailable"), { code: 14 }));
+      await vi.advanceTimersByTimeAsync(Math.min(60_000, 1_000 * 2 ** i));
+    }
+    expect(onAuthFailure).toHaveBeenCalledTimes(1);
+    expect(h.streams).toHaveLength(8);
+    expect(log).toHaveBeenCalledWith(expect.stringContaining("8 failed connections with no data"));
   });
 });
 

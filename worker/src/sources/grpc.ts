@@ -49,17 +49,29 @@ export function yellowstoneToRawTx(update: any): RawTx | null {
 const AUTH_CODES = new Set([7, 16]);
 /** Consecutive auth failures before giving up on the endpoint (e.g. an expired plan). */
 const AUTH_FAILURE_LIMIT = 3;
+/** Consecutive failed connections with no data in between before giving up, whatever the error says. */
+const GIVE_UP_FAILURES = 8;
 const MAX_BACKOFF_MS = 60_000;
 /** DBC sees several transactions a second; a stream silent this long is half-open, not idle. */
 const SILENCE_MS = 30_000;
 
 export type GrpcOptions = {
-  /** Called once when the endpoint keeps rejecting the token; the stream is stopped first. */
+  /**
+   * Called once when the endpoint keeps rejecting the token, or keeps failing without ever delivering
+   * data (about 3 minutes of backoff); the stream is stopped first.
+   */
   onAuthFailure?: () => void;
   setTimeout?: typeof setTimeout;
   setInterval?: typeof setInterval;
   now?: () => number;
 };
+
+/** A gRPC status from the error, or from its trailing metadata when it surfaces as e.g. 1 CANCELLED. */
+export function grpcStatus(e: any): number | undefined {
+  const fromMeta = Number(e?.metadata?.get?.("grpc-status")?.[0]);
+  if (Number.isInteger(fromMeta) && fromMeta > 0) return fromMeta;
+  return typeof e?.code === "number" ? e.code : undefined;
+}
 
 export async function startGrpc(ix: Indexer, url: string, token: string, log = console.log, opts: GrpcOptions = {}) {
   const later = opts.setTimeout ?? setTimeout;
@@ -78,7 +90,15 @@ export async function startGrpc(ix: Indexer, url: string, token: string, log = c
   let lastData = now();
   let current: { retry: (why: string, code?: number) => void } | null = null;
 
+  const giveUp = (why: string) => {
+    stopped = true;
+    clearInterval(watchdog);
+    log(`giving up on gRPC: ${why}`);
+    opts.onAuthFailure!();
+  };
+
   const schedule = () => {
+    if (opts.onAuthFailure && failures + 1 >= GIVE_UP_FAILURES) return giveUp(`${GIVE_UP_FAILURES} failed connections with no data`);
     const delay = Math.min(MAX_BACKOFF_MS, 1_000 * 2 ** Math.min(failures, 6));
     failures++;
     later(() => {
@@ -93,7 +113,8 @@ export async function startGrpc(ix: Indexer, url: string, token: string, log = c
       commitment: CommitmentLevel.PROCESSED,
     };
     const gap = ix.chainSlot - ix.lastSlot;
-    if (ix.lastSlot > 0 && gap > 0) {
+    // lastSlot is a processed slot and chainSlot a confirmed one, so lastSlot can be a few slots ahead.
+    if (ix.lastSlot > 0) {
       if (gap <= REPLAY_LIMIT) {
         lastFromSlot = ix.lastSlot;
         req.fromSlot = String(ix.lastSlot);
@@ -118,20 +139,16 @@ export async function startGrpc(ix: Indexer, url: string, token: string, log = c
       stream.removeAllListeners();
       stream.on("error", () => {}); // a late error after "end" must not become an uncaught exception
       try { stream.cancel(); } catch { /* already closed */ }
-      if (code !== undefined && AUTH_CODES.has(code) && ++authFailures >= AUTH_FAILURE_LIMIT && opts.onAuthFailure) {
-        stopped = true;
-        clearInterval(watchdog);
-        log(`gRPC endpoint rejected the token ${authFailures} times (${why}); giving up on gRPC`);
-        opts.onAuthFailure();
-        return;
-      }
+      if (code !== undefined && AUTH_CODES.has(code)) authFailures++;
+      else authFailures = 0;
+      if (authFailures >= AUTH_FAILURE_LIMIT && opts.onAuthFailure) return giveUp(`the endpoint rejected the token ${authFailures} times (${why})`);
       if (stopped) return;
       reconnects++;
       log(`gRPC stream ${why}; reconnecting from slot ${ix.lastSlot}`);
       schedule();
     };
     current = { retry };
-    stream.once("error", (e: any) => retry(`error: ${e?.message}`, e?.code));
+    stream.once("error", (e: any) => retry(`error: ${e?.message}`, grpcStatus(e)));
     stream.once("end", () => retry("ended"));
   };
 

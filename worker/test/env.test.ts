@@ -62,8 +62,10 @@ describe("env config", () => {
   });
 
   it("applies default empty rpcToken and explicit RPC_TOKEN", async () => {
-    expect((await importEnv({ RPC_TOKEN: undefined })).config.rpcToken).toBe("");
-    expect((await importEnv({ RPC_TOKEN: "rpc-tok" })).config.rpcToken).toBe("rpc-tok");
+    expect((await importEnv({ RPC_URL: "https://p.test", RPC_TOKEN: undefined })).config.rpcToken).toBe("");
+    expect((await importEnv({ RPC_URL: "https://p.test", RPC_TOKEN: "rpc-tok" })).config.rpcToken).toBe("rpc-tok");
+    // Without RPC_URL the defaults are public endpoints: the provider token must not go there.
+    expect((await importEnv({ RPC_URL: undefined, RPC_TOKEN: "rpc-tok" })).config.rpcToken).toBe("");
   });
 
   it("defaults the keyless fallback to public mainnet endpoints at 3 rps, and honours overrides", async () => {

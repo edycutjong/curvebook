@@ -158,6 +158,17 @@ describe("provider auth failure (expired plan)", () => {
     expect(calls[2].url).toBe("http://pub2.test");
   });
 
+  it("a request already in flight to the provider when another switched over retries on the fallback", async () => {
+    const calls = mockFetch([{ status: 401 }, { status: 401 }, { result: 1 }, { result: 2 }]);
+    const rpc = new Rpc("http://provider.test", 40, "tok", { urls: "http://pub.test", rps: 3 });
+    const a = rpc.call("getSlot", []);
+    const b = rpc.call("getSlot", []);
+    await vi.advanceTimersByTimeAsync(1_000);
+    expect(await a).toBe(1);
+    expect(await b).toBe(2);
+    expect(calls.map((c) => c.url)).toEqual(["http://provider.test", "http://provider.test", "http://pub.test", "http://pub.test"]);
+  });
+
   it("on 403 with no fallback configured, fails fast instead of retrying", async () => {
     const calls = mockFetch([{ status: 403 }]);
     const rpc = new Rpc("http://provider.test", 40, "tok");

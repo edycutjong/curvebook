@@ -92,6 +92,8 @@ export class Rpc {
           throw new RpcError(429, `HTTP 429 from ${new URL(ep.url).host}`);
         }
         if (r.status === 401 || r.status === 403) {
+          // Sent to the provider before an earlier request switched us over: retry on the fallback.
+          if (this.fellBack && !this.endpoints.includes(ep)) throw new RpcError(r.status, `HTTP ${r.status} from ${new URL(ep.url).host}; retrying on fallback`);
           if (ep.token && this.fallback && !this.fellBack) {
             this.fellBack = true;
             this.rps = this.fallback.rps;

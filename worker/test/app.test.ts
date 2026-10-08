@@ -107,6 +107,7 @@ function baseDeps(config: WorkerConfig, sql: any, rpc: any, indexer: any, setInt
     aggregate: vi.fn(async () => ({ windows: 7, configs: 2, ranked: 1 })),
     land: vi.fn(async () => ({ sig: "landed-sig", landedSlot: 42, pool: "poolX", via: "rpc", swqos: null })),
     setInterval: setIntervalFn,
+    setTimeout: vi.fn(),
   };
   return d as unknown as Deps;
 }
@@ -210,6 +211,7 @@ describe("realDeps(): the production dependency set main.ts wires up", () => {
     expect(deps.aggregate).toBe(realAggregateFn);
     expect(deps.land).toBe(realLandFn);
     expect(deps.setInterval).toBe(setInterval);
+    expect(deps.setTimeout).toBe(setTimeout);
 
     const idx = deps.indexerFactory(sql, deps.rpc, "rpc", () => {});
     expect(idx).toBeInstanceOf(Indexer);
@@ -581,6 +583,19 @@ describe("startWorker(): grpc cold start replays from the last saved slot, and f
     await new Promise((r) => setImmediate(r));
     expect(sql.calls.some((c: SqlCall) => c.text.includes("update health set source = 'rpc'"))).toBe(true);
     expect(logSpy.mock.calls.some((c: any) => c.join(" ").includes("source=rpc (fallback)"))).toBe(true);
+  });
+
+  it("if the keyless source fails to start, logs and retries it in 30 s instead of running with no source", async () => {
+    const d3 = baseDeps(config, makeSql(), makeRpc({ slot: 50 }), makeIndexer(), makeSetInterval());
+    (d3.startRpcLogs as any).mockImplementationOnce(() => { throw new Error("bad ws url"); });
+    const w3 = await startWorker(d3);
+    (d3.startGrpc as any).mock.calls[0][4].onAuthFailure();
+    expect(logSpy.mock.calls.some((c: any) => c.join(" ").includes("fallback source failed to start: bad ws url"))).toBe(true);
+    const [retry, ms] = (d3.setTimeout as any).mock.calls[0];
+    expect(ms).toBe(30_000);
+    retry();
+    expect(d3.startRpcLogs).toHaveBeenCalledTimes(2);
+    w3.stop();
   });
 
   it("logs, rather than throws, when the health source update fails", async () => {
