@@ -11,6 +11,8 @@
   [![Receipts](https://img.shields.io/badge/🧾_Receipts-DEMO.md-C4122F?style=for-the-badge)](DEMO.md)
   [![Colosseum World's Fair](https://img.shields.io/badge/Colosseum-World's_Fair_2026-8b5cf6?style=for-the-badge)](https://colosseum.com/worldsfair)
 
+  **[Demo video (2:39)](https://youtu.be/DGLbhdIFg8Q)** · **[Pitch video (1:38)](https://youtu.be/5uSudutu9OQ)** · [Landing page](https://curvebook.edycu.dev/landing) · [Pitch deck](https://curvebook.edycu.dev/pitch)
+
   <br/>
 
   ![Solana](https://img.shields.io/badge/Solana_mainnet-9945FF?style=flat&logo=solana&logoColor=white)
