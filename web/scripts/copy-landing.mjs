@@ -1,4 +1,4 @@
-// Copies the static landing page and pitch deck (source of truth: ../docs, also served by GitHub Pages)
+// Copies the static landing page and pitch deck (source of truth: ../docs; served only by this Vercel app)
 // into public/landing so the Vercel app serves them at /landing and /pitch. Relative paths are rewritten
 // to absolute /landing/… because Next serves these without a trailing slash. Output is gitignored.
 import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";

@@ -1,6 +1,6 @@
 <div align="center">
-  <img src="docs/img/icon.svg" alt="" width="72">
-  <h1>Curvebook</h1>
+  <img src="docs/img/icon-animated.svg" alt="Curvebook Icon" width="144">
+  <h1>Curvebook 📒</h1>
   <p><em>The form guide for Meteora DBC curves: how much of every launch outside wallets buy in its first ten slots,<br/>and a launch button on the curves with the best record.</em></p>
   <img src="docs/img/readme-hero.png" alt="Curvebook: The Form ranks DBC curves by first-10-slot sniper share; a launch receipt fills slot by slot" width="100%">
 
@@ -9,9 +9,11 @@
   [![Live app](https://img.shields.io/badge/▶_Live_app-curvebook.edycu.dev-1E6B45?style=for-the-badge)](https://curvebook.edycu.dev)
   [![Judges start here](https://img.shields.io/badge/⚖️_Judges-start_here-1C1B18?style=for-the-badge)](JUDGE.md)
   [![Receipts](https://img.shields.io/badge/🧾_Receipts-DEMO.md-C4122F?style=for-the-badge)](DEMO.md)
+  [![Landing page](https://img.shields.io/badge/🏇_Landing-curvebook.edycu.dev%2Flanding-1C1B18?style=for-the-badge)](https://curvebook.edycu.dev/landing)
+  [![Pitch deck](https://img.shields.io/badge/🎞️_Pitch_deck-curvebook.edycu.dev%2Fpitch-1C1B18?style=for-the-badge)](https://curvebook.edycu.dev/pitch)
   [![Colosseum World's Fair](https://img.shields.io/badge/Colosseum-World's_Fair_2026-8b5cf6?style=for-the-badge)](https://colosseum.com/worldsfair)
 
-  **[Demo video (2:39)](https://youtu.be/DGLbhdIFg8Q)** · **[Pitch video (1:38)](https://youtu.be/5uSudutu9OQ)** · [Landing page](https://curvebook.edycu.dev/landing) · [Pitch deck](https://curvebook.edycu.dev/pitch)
+  **[Demo video (2:39)](https://youtu.be/DGLbhdIFg8Q)** · **[Pitch video (1:38)](https://youtu.be/5uSudutu9OQ)**
 
   <br/>
 
