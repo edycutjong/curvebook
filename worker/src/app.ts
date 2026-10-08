@@ -39,7 +39,7 @@ export function realDeps(config: WorkerConfig, sql: Sql): Deps {
   return {
     config,
     sql,
-    rpc: new Rpc(config.rpcUrl, config.rpcRps),
+    rpc: new Rpc(config.rpcUrl, config.rpcRps, config.rpcToken),
     indexerFactory: (s, r, source, l) => new Indexer(s, r, source, l),
     startGrpc: realStartGrpc,
     startRpcLogs: realStartRpcLogs,

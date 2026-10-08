@@ -17,8 +17,8 @@ export class Rpc {
   private next = 0;
   errors = 0;
 
-  /** `urls` may be a comma-separated list. */
-  constructor(urls: string, private rps: number) {
+  /** `urls` may be a comma-separated list; `token`, when set, is sent as the `x-token` header (RPC Fast). */
+  constructor(urls: string, private rps: number, private token = "") {
     this.endpoints = urls.split(",").map((u) => u.trim()).filter(Boolean).map((url) => ({ url, tokens: rps, pausedUntil: 0, strikes: 0 }));
     setInterval(() => {
       for (const e of this.endpoints) e.tokens = this.rps;
@@ -68,7 +68,7 @@ export class Rpc {
       try {
         const r = await fetch(ep.url, {
           method: "POST",
-          headers: { "content-type": "application/json" },
+          headers: this.token ? { "content-type": "application/json", "x-token": this.token } : { "content-type": "application/json" },
           body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
           signal: AbortSignal.timeout(20_000),
         });

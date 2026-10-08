@@ -80,6 +80,7 @@ function makeConfig(overrides: Partial<WorkerConfig> = {}): WorkerConfig {
     databaseUrl: "postgres://fake",
     grpcUrl: "",
     grpcToken: "",
+    rpcToken: "",
     solamiSwqosKey: "",
     rpcUrl: "http://rpc.fake",
     wsUrl: "ws://rpc.fake",

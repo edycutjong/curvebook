@@ -24,9 +24,9 @@ function fakeResponse(spec: Spec) {
 /** Scripts one fake Response per fetch() call, in order, and records url/body/time. */
 function mockFetch(specs: Spec[]) {
   const queue = [...specs];
-  const calls: { url: string; body: any; t: number }[] = [];
+  const calls: { url: string; body: any; headers: Record<string, string>; t: number }[] = [];
   const fn = vi.fn(async (url: string, init: any) => {
-    calls.push({ url, body: JSON.parse(init.body), t: Date.now() });
+    calls.push({ url, body: JSON.parse(init.body), headers: init.headers, t: Date.now() });
     const spec = queue.shift();
     if (!spec) throw new Error("fetch invoked more times than scripted");
     return fakeResponse(spec);
@@ -130,6 +130,16 @@ describe("429 backoff", () => {
     expect(await p2).toBe("ok2");
 
     expect(calls.map((c) => c.t)).toEqual([0, 2000, 2000, 4000]);
+  });
+});
+
+describe("auth header", () => {
+  it("sends x-token when a token is set, and no x-token without one", async () => {
+    const calls = mockFetch([{ result: 1 }, { result: 2 }]);
+    await new Rpc("http://only.test", 10, "tok").call("getSlot", []);
+    await new Rpc("http://only.test", 10).call("getSlot", []);
+    expect(calls[0].headers).toEqual({ "content-type": "application/json", "x-token": "tok" });
+    expect(calls[1].headers).toEqual({ "content-type": "application/json" });
   });
 });
 

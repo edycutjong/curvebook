@@ -61,6 +61,11 @@ describe("env config", () => {
     expect(config.rpcUrl).toBe("https://api.mainnet-beta.solana.com,https://solana-rpc.publicnode.com");
   });
 
+  it("applies default empty rpcToken and explicit RPC_TOKEN", async () => {
+    expect((await importEnv({ RPC_TOKEN: undefined })).config.rpcToken).toBe("");
+    expect((await importEnv({ RPC_TOKEN: "rpc-tok" })).config.rpcToken).toBe("rpc-tok");
+  });
+
   it("uses explicit WS_URL override", async () => {
     const { config } = await importEnv({ WS_URL: "wss://custom-ws.example.com" });
     expect(config.wsUrl).toBe("wss://custom-ws.example.com");

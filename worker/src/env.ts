@@ -13,6 +13,8 @@ export const config = {
    * RPC_URL when set (e.g. RPC Fast), else two keyless public endpoints sharing the load.
    */
   rpcUrl: env.RPC_URL ?? "https://api.mainnet-beta.solana.com,https://solana-rpc.publicnode.com",
+  /** Sent as the x-token header on JSON-RPC calls (RPC Fast authenticates this way). */
+  rpcToken: env.RPC_TOKEN ?? "",
   wsUrl: env.WS_URL ?? "wss://api.mainnet-beta.solana.com",
   /** Requests per second to the JSON-RPC endpoint (public mainnet tolerates ~4 for heavy methods). */
   rpcRps: Number(env.RPC_RPS ?? 3),
