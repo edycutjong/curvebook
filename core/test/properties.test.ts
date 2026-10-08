@@ -17,18 +17,21 @@ const arbSwap = fc.record({
   tradeDirection: fc.constantFrom(0, 1),
   pool: fc.constantFrom("P", "P", "P", "OTHER"),
 }).map((s) => buy(s));
+// buildWindow (correctly) counts each signature once, so generated buys need distinct signatures:
+// two random buys that happened to share one would be deduplicated and break the expected sums.
+const arbSwaps = (maxLength: number) => fc.array(arbSwap, { maxLength }).map((a) => a.map((s, i) => ({ ...s, sig: `${s.sig}#${i}` })));
 const run = (swaps: SwapEvent[]) => buildWindow({ pool: "P", config: "C", creator: "CREATOR", openSlot: OPEN, swapBaseAmount: DENOM, swaps });
 
 describe("SNP10 window properties (10,000 random windows each)", () => {
   it("the creator's own buys never change SNP10", () => {
-    fc.assert(fc.property(fc.array(arbSwap, { maxLength: 40 }), fc.array(fc.bigInt({ min: 1n, max: 10n ** 13n }), { maxLength: 5 }), (swaps, extra) => {
+    fc.assert(fc.property(arbSwaps(40), fc.array(fc.bigInt({ min: 1n, max: 10n ** 13n }), { maxLength: 5 }), (swaps, extra) => {
       const more = [...swaps, ...extra.map((o, i) => buy({ slot: OPEN + (i % WINDOW_SLOTS), payer: "CREATOR", output: o, sig: `c${i}` }))];
       expect(run(more).snp10).toBe(run(swaps).snp10);
     }), { numRuns: 10_000 });
   });
 
   it("only outside buys inside [s_open, s_open+9] on this pool count, and per-slot cells sum to SNP10", () => {
-    fc.assert(fc.property(fc.array(arbSwap, { maxLength: 40 }), (swaps) => {
+    fc.assert(fc.property(arbSwaps(40), (swaps) => {
       const w = run(swaps);
       const expected = swaps
         .filter((s) => s.pool === "P" && s.tradeDirection === 1 && s.payer !== "CREATOR" && s.slot >= OPEN && s.slot < OPEN + WINDOW_SLOTS)
@@ -40,7 +43,7 @@ describe("SNP10 window properties (10,000 random windows each)", () => {
   }, 30_000);
 
   it("is independent of arrival order (stream vs crawl)", () => {
-    fc.assert(fc.property(fc.array(arbSwap, { maxLength: 30 }).chain((s) => fc.tuple(fc.constant(s), fc.shuffledSubarray(s, { minLength: s.length, maxLength: s.length }))), ([a, b]) => {
+    fc.assert(fc.property(arbSwaps(30).chain((s) => fc.tuple(fc.constant(s), fc.shuffledSubarray(s, { minLength: s.length, maxLength: s.length }))), ([a, b]) => {
       expect(run(b).snp10).toBe(run(a).snp10);
       expect(run(b).ncWallets).toBe(run(a).ncWallets);
     }), { numRuns: 10_000 });
