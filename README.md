@@ -114,14 +114,14 @@ Reproduce the numbers: `pnpm proof` (snapshot → offline recompute → 20 sampl
 
 ## 🧪 Testing & CI
 
-**703 tests, with 100% statement, branch, function and line coverage** on every `core`, `worker` and `web/lib` source file (thresholds enforced in CI; pages and routes are covered by the e2e suite), plus property checks over
+**717 tests, with 100% statement, branch, function and line coverage** on every `core`, `worker` and `web/lib` source file (thresholds enforced in CI; pages and routes are covered by the e2e suite), plus property checks over
 **30,000 random windows** and **20,000 random fee schedules × 10 slots** (our formula equals the Meteora SDK's own scheduler at every point):
 
 | Suite | Count | Coverage | What it pins |
 |---|---|---|---|
 | core (vitest) | 171 | 100% | decoding real mainnet txs (incl. CPI-routed and v1), SNP10 window, Form stats, SDK toll quotes for every preset, launch builder, router client, properties |
 | worker (vitest) | 251 | 100% | crawl paging, indexer finalize paths, gRPC ≡ RPC decode on real fixtures, relay permission boundary, lander, RPC backoff, HTTP API, defect-named regressions |
-| web lib (vitest) | 254 | 100% | formatters, strip scaling, Form grouping, launch validation, DB queries (Postgres mocked) |
+| web lib (vitest) | 268 | 100% | formatters, strip scaling, Form grouping, launch validation, DB queries (Postgres mocked) |
 | program (Rust) | 8 | — | I2 split exactness incl. a 100k-case sweep, DBC discriminators and PDAs |
 | program (localnet, real DBC binary) | 19 | — | invariants I1–I6, every negative path |
 | e2e (Playwright) | 23 | — | smoke, `/judge` with no session, Form → config → receipt, 375 / 768 / 1440 layout |

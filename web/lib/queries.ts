@@ -1,3 +1,4 @@
+import { retrying } from "@/lib/retry";
 import "server-only";
 import { sql, plain } from "./db";
 import type { FormRow } from "./form";
@@ -21,7 +22,7 @@ export type Health = {
 
 export type HealthWithCounts = { health: Health | null; pools: number; windows: number; configs: number };
 
-export async function getHealth(): Promise<HealthWithCounts> {
+export const getHealth = retrying(async function getHealth(): Promise<HealthWithCounts> {
   const [[h], [c]] = await Promise.all([
     sql`select * from health where id = 1`,
     sql`select (select count(*) from pools) as pools,
@@ -30,7 +31,7 @@ export async function getHealth(): Promise<HealthWithCounts> {
   ]);
   const counts = plain<{ pools: number; windows: number; configs: number }>(c);
   return { health: h ? plain<Health>(h) : null, ...counts };
-}
+});
 
 export type Preset = {
   config: string;
@@ -44,13 +45,13 @@ export type Preset = {
   network: string;
 };
 
-export async function getPresets(): Promise<Preset[]> {
+export const getPresets = retrying(async function getPresets(): Promise<Preset[]> {
   const rows = await sql`select config, name, slug, author, author_bps, vault, create_sig, register_sig, network
     from presets order by name`;
   return plain<Preset[]>(rows);
-}
+});
 
-export async function getFormRows(): Promise<FormRow[]> {
+export const getFormRows = retrying(async function getFormRows(): Promise<FormRow[]> {
   // Presets with no finished window yet still get a row (launches 0) so the presets block is complete.
   const rows = await sql`
     select coalesce(s.config, p.config) as config, coalesce(s.launches, 0) as launches, coalesce(s.creators, 0) as creators,
@@ -75,7 +76,7 @@ export async function getFormRows(): Promise<FormRow[]> {
     tied: r.tied,
     preset: r.preset_slug ? { name: r.preset_name, slug: r.preset_slug } : null,
   }));
-}
+});
 
 export type ConfigRow = {
   address: string;
@@ -101,7 +102,7 @@ export type WindowLine = {
   buys: number;
 };
 
-export async function getConfig(address: string) {
+export const getConfig = retrying(async function getConfig(address: string) {
   const [[cfg], rows, [counts], presetRows] = await Promise.all([
     sql`select address, fee_claimer, quote_mint, activation_type, swap_base_amount, migration_quote_threshold,
           pool_creation_fee, describe, raw_b64, first_seen_slot from configs where address = ${address}`,
@@ -122,7 +123,7 @@ export async function getConfig(address: string) {
     counts: plain<{ pools: number; windows: number; complete: number }>(counts),
     preset: presetRows[0] ? plain<Preset>(presetRows[0]) : null,
   };
-}
+});
 
 export type PoolRow = {
   address: string;
@@ -183,7 +184,7 @@ export type PoolPayload = {
   launch: LaunchRow | null;
 };
 
-export async function getPool(address: string): Promise<PoolPayload | null> {
+export const getPool = retrying(async function getPool(address: string): Promise<PoolPayload | null> {
   const [[pool], buys, [win], [launch]] = await Promise.all([
     sql`select p.address, p.config, p.creator, p.base_mint, p.create_sig, p.create_slot, p.created_at, p.open_slot,
           p.graduated_at, p.graduated_sig, p.source, c.swap_base_amount, c.quote_mint
@@ -203,7 +204,7 @@ export async function getPool(address: string): Promise<PoolPayload | null> {
     window: win ? plain<PoolWindowRow>(win) : null,
     launch: launch ? plain<LaunchRow>(launch) : null,
   };
-}
+});
 
 export type EventRow = {
   id: number;
@@ -217,25 +218,25 @@ export type EventRow = {
   seen_at: string;
 };
 
-export async function getEvents(limit = 50): Promise<EventRow[]> {
+export const getEvents = retrying(async function getEvents(limit: number = 50): Promise<EventRow[]> {
   const n = Math.min(200, Math.max(1, Math.trunc(limit) || 50));
   const rows = await sql`select id, kind, slot, sig, pool, config, payer, source, seen_at from events order by id desc limit ${n}`;
   return plain<EventRow[]>(rows);
-}
+});
 
-export async function getLaunches(limit = 50): Promise<(LaunchRow & { preset_name: string | null })[]> {
+export const getLaunches = retrying(async function getLaunches(limit: number = 50): Promise<(LaunchRow & { preset_name: string | null })[]> {
   const rows = await sql`select l.pool, l.preset, l.wallet, l.base_mint, l.sig, l.landed_slot, l.via, l.third_party, l.created_at,
       p.name as preset_name
     from launches l left join presets p on p.config = l.preset order by l.created_at desc limit ${limit}`;
   return plain(rows);
-}
+});
 
-export async function getPresetBySlug(slug: string) {
+export const getPresetBySlug = retrying(async function getPresetBySlug(slug: string) {
   const [row] = await sql`select p.config, p.name, p.slug, p.author, p.author_bps, p.vault, p.create_sig, p.register_sig, p.network,
       c.pool_creation_fee, c.quote_mint, c.raw_b64
     from presets p left join configs c on c.address = p.config where p.slug = ${slug}`;
   return row ? plain<Preset & { pool_creation_fee: string | null; quote_mint: string | null; raw_b64: string | null }>(row) : null;
-}
+});
 
 export type JudgeFacts = {
   health: Health | null;
@@ -247,7 +248,7 @@ export type JudgeFacts = {
 };
 
 /** Everything /judge prints, in one round trip per figure. No figure is computed outside the DB. */
-export async function getJudgeFacts(): Promise<JudgeFacts> {
+export const getJudgeFacts = retrying(async function getJudgeFacts(): Promise<JudgeFacts> {
   const [[h], [c], [receipt], [top]] = await Promise.all([
     sql`select * from health where id = 1`,
     sql`select (select count(*) from pools) as pools,
@@ -266,4 +267,4 @@ export async function getJudgeFacts(): Promise<JudgeFacts> {
     receiptPool: receipt ? (receipt.pool as string) : null,
     topConfig: top ? plain<{ config: string; launches: number; name: string | null }>(top) : null,
   };
-}
+});
