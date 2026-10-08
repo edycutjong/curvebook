@@ -13,7 +13,7 @@ const CLAIM =
   "Curvebook measures how much of every Meteora DBC launch outside wallets buy in its first ten slots, and lets you launch on a curve by that record.";
 
 // Committed facts: each one is produced by a command in the repo, not by the live index.
-const TESTS = "171 core · 225 worker · 254 web (100% line/branch coverage) · 8 Rust + 19 localnet program tests · 23 e2e; property checks over 30,000 windows and 20,000 fee schedules";
+const TESTS = "171 core · 227 worker · 254 web (100% line/branch coverage) · 8 Rust + 19 localnet program tests · 23 e2e; property checks over 30,000 windows and 20,000 fee schedules";
 const LOCALNET =
   "slot+2 outside buy on Slow Cliff paid 3,381 bps vs creator 100 bps; same buys on Control paid 100 bps; partner fees decoded = SDK total (S8); creation fee split 70/30 on-chain";
 
@@ -130,7 +130,7 @@ pnpm rehearse`}</pre>
           <li>The three presets are live on mainnet with one own launch each (DEMO.md §1b); the router that splits their fees runs on devnet (DEMO.md §3b), not on mainnet yet.</li>
           <li>The index covers only launches since capture start; nothing earlier is backfilled.</li>
           <li>Creator-funded sybil wallets count as outsiders.</li>
-          <li>The live worker runs keyless on public RPC today; the RPC Fast Yellowstone gRPC source is wired and switches on with GRPC_URL.</li>
+          <li>The live worker streams from RPC Fast Yellowstone gRPC since 8 Oct 2026 21:09 UTC; before that it ran keyless on public RPC.</li>
         </ul>
       </section>
 
