@@ -4,8 +4,13 @@ import { int, pct, short } from "@/lib/format";
 import { groupForm, headline } from "@/lib/form";
 import { MIN_CREATORS, MIN_WINDOWS } from "@/lib/constants";
 import { getFormRows, getHealth } from "@/lib/queries";
+import { OPEN_GRAPH } from "@/lib/site";
+import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
+
+// og:url only here: sub-pages inherit the layout's openGraph and must not claim the home URL.
+export const metadata: Metadata = { openGraph: { ...OPEN_GRAPH, url: "/" } };
 
 export default async function FormPage() {
   const [rows, { health, pools, windows }] = await Promise.all([getFormRows(), getHealth()]);

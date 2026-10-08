@@ -7,18 +7,17 @@ const display = Big_Shoulders({ subsets: ["latin"], weight: "variable", axes: ["
 const body = Source_Serif_4({ subsets: ["latin"], weight: ["400", "600"], variable: "--nf-body", display: "swap" });
 const data = IBM_Plex_Mono({ subsets: ["latin"], weight: ["500", "600"], variable: "--nf-data", display: "swap" });
 
-const TITLE = "Curvebook — the form guide for Meteora DBC curves";
-const DESCRIPTION =
-  "Every Meteora Dynamic Bonding Curve config, ranked by how much of the curve non-creator wallets buy in the first 10 slots.";
-const OG = { url: "/og-image.png", width: 1200, height: 630, alt: "Curvebook: the form guide for Meteora DBC curves" };
+import { DESCRIPTION, OG_IMAGE, OPEN_GRAPH, TITLE } from "@/lib/site";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"),
   title: { default: TITLE, template: "%s · Curvebook" },
   description: DESCRIPTION,
   icons: { icon: "/icon.svg" },
-  openGraph: { type: "website", siteName: "Curvebook", title: TITLE, description: DESCRIPTION, images: [OG] },
-  twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION, images: [OG.url] },
+  authors: [{ name: "Edy Cu", url: "https://github.com/edycutjong" }],
+  creator: "Edy Cu",
+  openGraph: OPEN_GRAPH,
+  twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION, images: [OG_IMAGE.url], creator: "@edycutjong" },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
