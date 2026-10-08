@@ -1,0 +1,2 @@
+# 2026-10-08T21:42:21.359Z 60 s sample of the curvebook gRPC source (DBC transactions filter, failed: false) on RPC Fast
+decoded DBC transactions: 489 (8.2/s), slots 454668005..454668226, reconnects 0
