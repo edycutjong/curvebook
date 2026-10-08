@@ -92,8 +92,9 @@ Diagram and design notes: [ARCHITECTURE.md](ARCHITECTURE.md).
 decoding against IDL 0.2.1. Friction we hit is written up in [docs/DX-REPORT.md](docs/DX-REPORT.md).
 
 **The live worker runs on [RPC Fast](https://rpcfast.com)** (since 8 Oct 2026, 21:09 UTC). It streams every DBC transaction over RPC Fast's
-Yellowstone gRPC, with `from_slot` replay when the stream reconnects ([`grpc.ts`](worker/src/sources/grpc.ts)), and makes its JSON-RPC calls to
-RPC Fast with an `x-token` header ([`rpc.ts`](worker/src/rpc.ts)). The gRPC decoder is tested to produce exactly the events `getTransaction`
+Yellowstone gRPC, with `from_slot` replay after a reconnect or a redeploy ([`grpc.ts`](worker/src/sources/grpc.ts)), and makes its JSON-RPC calls
+to RPC Fast with an `x-token` header ([`rpc.ts`](worker/src/rpc.ts)). If RPC Fast stops accepting the key (the plan ends), the worker moves itself
+to public RPC instead of stalling. The gRPC decoder is tested to produce exactly the events `getTransaction`
 produces on real mainnet fixtures. Without `GRPC_URL` the worker runs keyless, as it did from 4 Oct until the switch: public `logsSubscribe`
 plus confirmed signatures.
 Launches land with plain `sendTransaction`; an optional Beam landing adapter ([`lander.ts`](worker/src/lander.ts)) is off.
@@ -113,13 +114,13 @@ Reproduce the numbers: `pnpm proof` (snapshot → offline recompute → 20 sampl
 
 ## 🧪 Testing & CI
 
-**679 tests, with 100% statement, branch, function and line coverage** on every `core`, `worker` and `web/lib` source file (thresholds enforced in CI; pages and routes are covered by the e2e suite), plus property checks over
+**697 tests, with 100% statement, branch, function and line coverage** on every `core`, `worker` and `web/lib` source file (thresholds enforced in CI; pages and routes are covered by the e2e suite), plus property checks over
 **30,000 random windows** and **20,000 random fee schedules × 10 slots** (our formula equals the Meteora SDK's own scheduler at every point):
 
 | Suite | Count | Coverage | What it pins |
 |---|---|---|---|
 | core (vitest) | 171 | 100% | decoding real mainnet txs (incl. CPI-routed and v1), SNP10 window, Form stats, SDK toll quotes for every preset, launch builder, router client, properties |
-| worker (vitest) | 228 | 100% | crawl paging, indexer finalize paths, gRPC ≡ RPC decode on real fixtures, relay permission boundary, lander, RPC backoff, HTTP API, defect-named regressions |
+| worker (vitest) | 245 | 100% | crawl paging, indexer finalize paths, gRPC ≡ RPC decode on real fixtures, relay permission boundary, lander, RPC backoff, HTTP API, defect-named regressions |
 | web lib (vitest) | 254 | 100% | formatters, strip scaling, Form grouping, launch validation, DB queries (Postgres mocked) |
 | program (Rust) | 8 | — | I2 split exactness incl. a 100k-case sweep, DBC discriminators and PDAs |
 | program (localnet, real DBC binary) | 19 | — | invariants I1–I6, every negative path |

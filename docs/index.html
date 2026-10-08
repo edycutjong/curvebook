@@ -306,7 +306,7 @@ footer small{font:500 12px var(--font-data);color:var(--muted)}
         <a class="btn" href="pitch/">Pitch Deck</a>
       </div>
       <div class="run"><code id="runcmd">pnpm install &amp;&amp; docker compose up -d db &amp;&amp; pnpm worker</code><button type="button" id="copy" aria-label="Copy the run command">Copy</button></div>
-      <p class="proof">keyless · <i>index + presets live on mainnet</i> · decoded from EvtSwap2 · 20/20 re-verified · router on devnet</p>
+      <p class="proof">RPC Fast gRPC · <i>index + presets live on mainnet</i> · decoded from EvtSwap2 · 20/20 re-verified · router on devnet</p>
     </div>
 
     <article class="pp" aria-label="Past-performance card for a real mainnet launch">
@@ -332,7 +332,7 @@ footer small{font:500 12px var(--font-data);color:var(--muted)}
     <div class="rc"><div class="n red"><span data-count="90.7" data-dec="1">90.7</span><small>%</small></div><p>of one launch's curve, gone in slot 0 to one wallet paying 9.208 SOL</p><div class="pf">DEMO.md §1 · Solscan</div></div>
     <div class="rc"><div class="n"><span data-count="45">45</span><small> / 73</small></div><p>launch windows where outside wallets bought within ten slots</p><div class="pf">fixtures/snapshot-453074621</div></div>
     <div class="rc"><div class="n"><span data-count="20">20</span><small> / 20</small></div><p>sampled buys re-fetched from mainnet: slot, payer and amount match</p><div class="pf">pnpm proof · DEMO.md §2</div></div>
-    <div class="rc"><div class="n"><span data-count="679">679</span></div><p>tests, 100% line and branch coverage on core, worker and web/lib</p><div class="pf">README · Testing &amp; CI</div></div>
+    <div class="rc"><div class="n"><span data-count="697">697</span></div><p>tests, 100% line and branch coverage on core, worker and web/lib</p><div class="pf">README · Testing &amp; CI</div></div>
   </div>
 </section>
 
@@ -500,7 +500,7 @@ live config_stats vs recomputed: <span class="ok">identical</span>
       <details><summary>What isn't on mainnet yet?</summary><p>The three presets are live on mainnet with one own launch each (DEMO.md §1b), and their fees are claimed there. The royalty router that splits those fees author/treasury runs on devnet, with every step on the explorer (DEMO.md §3b); until it moves, mainnet presets name the author's wallet as fee claimer.</p></details>
       <details><summary>What counts as an "outside" buy?</summary><p>Any buy whose paying key is not the pool creator's. The payer comes from the DBC swap instruction that emitted the event, so aggregator-routed buys are attributed too. Creator-funded wallets count as outside, and the page says so.</p></details>
       <details><summary>Can a launchpad farm a good rank?</summary><p>Not cheaply. A config needs at least 20 complete windows from at least 5 creators, the top creator's share of launches is printed, and ranks tie when the 90% intervals overlap.</p></details>
-      <details><summary>What does the live index run on?</summary><p>Public Solana RPC, no paid keys: it discovers launches from <code>logsSubscribe</code> and re-reads every ten-slot window from confirmed signatures, so anyone can run it. An optional Yellowstone gRPC adapter is in the code but switched off in the live deployment.</p></details>
+      <details><summary>What does the live index run on?</summary><p>RPC Fast: a Yellowstone gRPC stream of every DBC transaction, with <code>from_slot</code> replay after a reconnect or redeploy, and every ten-slot window re-read from confirmed signatures. Without a gRPC endpoint, or if the provider stops accepting the key, it falls back to public RPC (<code>logsSubscribe</code>), so anyone can run it with no paid keys.</p></details>
       <details><summary>Can my launchpad use it without your UI?</summary><p>Yes. Call <code>buildLaunchTx</code> from your own backend (examples/launch-on-preset.ts). The preset's royalty is enforced by its on-chain config, not by our frontend.</p></details>
     </div>
   </div>

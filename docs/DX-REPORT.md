@@ -1,4 +1,4 @@
-# DX report — Meteora DBC SDK + Solami
+# DX report — Meteora DBC SDK, Solami, RPC Fast
 
 What building Curvebook taught us about the sponsor tooling, in the order we hit it.
 
@@ -25,7 +25,15 @@ What building Curvebook taught us about the sponsor tooling, in the order we hit
 | (2026-10-04, live key, SDK 0.1.56) A Free-plan `subscribe` fails with `1 CANCELLED: Call cancelled`; the real reason is only in the trailing metadata: `grpc-status 7`, *"gRPC streaming requires a plan that includes gRPC access…"* (an invalid key gives `16 invalid api key` the same way) | Looks like a network bug, not a plan limit; unary `getVersion`/`getSlot` succeed even with a bad key, so they can't be used as an auth check | Log the stream's `metadata` event; surface `grpc-message` |
 | `withSwqos(key)` base58-decodes the key and uses 32 bytes as the QUIC identity seed; a dashboard "API key" is not base58 and fails with `Non-base58 character` | The "one scoped key" type doesn't work for Beam from the TS SDK | Create a dedicated SwQoS key |
 
-## Keyless mode (the live deployment)
-Without a Solami token the worker discovers launches from the public `logsSubscribe` stream (≈35 DBC tx/s, ≈2–5 launches/min)
+## RPC Fast (the live deployment since 8 Oct 2026)
+| Finding | Impact | Workaround |
+|---|---|---|
+| Standard Yellowstone gRPC: `@triton-one/yellowstone-grpc` connects with the endpoint and `x-token`, no vendor SDK | The gRPC source is provider-neutral (`GRPC_URL` / `GRPC_TOKEN`) | `worker/src/sources/grpc.ts` |
+| JSON-RPC authenticates with an `x-token` **header**; without it every call is HTTP 401 | A URL-only RPC client can't use it | `Rpc` sends the header to the provider's endpoints only (`worker/src/rpc.ts`) |
+| A bad or expired key is `7 PERMISSION_DENIED` with `{"allowed":false,"reason":"unknown_token"}`, not `16 UNAUTHENTICATED` | Treating only 16 as an auth failure would retry forever | Both 7 and 16 count; after 3 in a row the worker falls back to keyless (verified against the live endpoint with a dummy key) |
+| One filtered stream carries all DBC traffic (≈10 successful DBC tx/s) | Well inside the 25-stream plan limit; stream data is not billed per message | One subscription |
+
+## Keyless mode (fallback; the live deployment until 8 Oct 2026)
+Without a gRPC endpoint the worker discovers launches from the public `logsSubscribe` stream (≈35 DBC tx/s, ≈2–5 launches/min)
 and reads each window from confirmed signatures of the pool account. Public endpoints rate-limit `getTransaction`;
 spreading requests over two endpoints with per-endpoint backoff kept retries invisible.
