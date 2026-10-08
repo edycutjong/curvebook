@@ -97,7 +97,7 @@ export function LaunchForm({ slug, tokenDecimals }: { slug: string; tokenDecimal
       </form>
 
       <div>
-        <h3>Progress</h3>
+        <h2 className="h3">Progress</h2>
         <ol className="steps" id="launch-steps" aria-live="polite">
           <li className={done("building") ? "" : "pending"}>built {done("building") ? "✓" : step === "building" ? "…" : ""}</li>
           <li className={done("signing") ? "" : "pending"}>signed {done("signing") ? "✓" : step === "signing" ? "… check your wallet" : ""}</li>

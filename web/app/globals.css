@@ -79,7 +79,9 @@ h2 {
   font-size: 32px;
   font-weight: 700;
 }
-h3 {
+h3,
+h2.h3 {
+  /* h2.h3: a section heading that must be an h2 for document order but reads at h3 size */
   font-size: 22px;
   font-weight: 700;
   letter-spacing: 0.04em;
