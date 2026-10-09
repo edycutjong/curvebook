@@ -6,14 +6,29 @@ import { MIN_CREATORS, MIN_WINDOWS } from "@/lib/constants";
 import { getFormRows, getHealth } from "@/lib/queries";
 import { OPEN_GRAPH } from "@/lib/site";
 import type { Metadata } from "next";
+import { PHASE_PRODUCTION_BUILD } from "next/constants";
 
-export const dynamic = "force-dynamic";
+// ISR: served from Vercel's edge cache and re-rendered in the background at most every 30 s. Rendering
+// per request held the first byte for 1-1.5 s on the Form queries (Lighthouse mobile LCP 2.1 s).
+export const revalidate = 30;
+
+// The CI build job prerenders without Postgres. At build time only, render the empty Form instead of
+// failing; the first revalidation (≤ 30 s after deploy) replaces it. At runtime a query error still throws.
+async function loadForm() {
+  try {
+    return await Promise.all([getFormRows(), getHealth()]);
+  } catch (e) {
+    if (process.env.NEXT_PHASE !== PHASE_PRODUCTION_BUILD) throw e;
+    console.warn(`Form prerender without data: ${(e as Error).message}`);
+    return [[], { health: null, pools: 0, windows: 0, configs: 0 }] as const;
+  }
+}
 
 // og:url only here: sub-pages inherit the layout's openGraph and must not claim the home URL.
 export const metadata: Metadata = { openGraph: { ...OPEN_GRAPH, url: "/" } };
 
 export default async function FormPage() {
-  const [rows, { health, pools, windows }] = await Promise.all([getFormRows(), getHealth()]);
+  const [rows, { health, pools, windows }] = await loadForm();
   const { ranked, unranked, presets } = groupForm(rows);
   const verdict = headline(ranked);
   const leading = unranked.slice(0, 25);
